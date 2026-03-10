@@ -14,7 +14,36 @@ When you take an Issue from the "Ready" column on our Kanban board:
 2. Use the following naming convention for your branch: `feat/nombre-de-la-tarea`.
     * *Example:* `feat/upload-photos`
 
-## 3. Commit Standards
+## 3. Naming Convention (Non-Source Code SCIs)
+We follow a strict naming convention to ensure our file system has a standard, readable order. This applies to any Software Configuration Item (SCI) that isn't source code (e.g., documents, diagrams, loose scripts).
+
+**The Formula:**
+`[PROJECT]-[MODULE]-[TYPE]-[DESCRIPTION]-v[VERSION].[EXT]`
+
+*Example:* `SGM-AUTH-UML-login_sequence-v1.0.png`
+
+### Allowed Abbreviations Table
+
+**Modules:**
+| Abbreviation | Meaning |
+| :--- | :--- |
+| **AUTH** | Authentication & Authorization |
+| **TICK** | Ticketing & Incident Management |
+| **USER** | User / Roles Management |
+| **DB** | Database |
+| **UI** | User Interface / Frontend |
+| **SYS** | General System Architecture |
+
+**Types:**
+| Abbreviation | Meaning |
+| :--- | :--- |
+| **REQ** | Requirements / Specifications |
+| **UML** | Diagrams (UML, ERD, Wireframes) |
+| **TST** | Testing (Test cases, QA scripts) |
+| **DOC** | General Documentation (Manuals, Notes) |
+| **SCR** | Scripts (DB migrations, setup scripts) |
+
+## 4. Commit Standards
 We keep our repository clean by following the Conventional Commits standard.
 Please format your commit messages like this: `type: description`
 * `feat:` A new feature for the user.
@@ -23,7 +52,7 @@ Please format your commit messages like this: `type: description`
 * `chore:` Updating dependencies, configurations, etc.
 * *Example:* `feat: add camera access to ticket form`
 
-## 4. Pull Requests and Code Review
+## 5. Pull Requests and Code Review
 Extreme Programming (XP) practices are in effect. **No code goes into the main branch without a review**.
 1. Verify that your project compiles locally and doesn't break previous features.
 2. Push your branch to GitHub and open a Pull Request (PR).
