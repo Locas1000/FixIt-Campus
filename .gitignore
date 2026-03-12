@@ -1,0 +1,20 @@
+# Node dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Environment variables (Never commit secrets!)
+.env
+frontend/.env
+backend/.env
+
+# Build outputs for Vite
+dist/
+frontend/dist/
+build/
+
+# Docker volumes/data (Prevents committing the actual local database files)
+pgdata/
+
+# OS generated files
+.DS_Store
