@@ -1,9 +1,6 @@
-/**
- * Controller to handle ticket-related logic.
- * Follows SGM API Interface Contract (v1.1)
- */
+const pool = require('../config/db');
 
-const getTickets = (req, res) => {
+const getTickets = async(req, res) => {
     // These 2 objects strictly match the Ticket Object structure from the contract
     try {
         const result = await pool.query('SELECT * FROM Tickets ORDER BY created_at DESC');
@@ -21,10 +18,13 @@ const getTickets = (req, res) => {
             updatedAt: ticket.updatedAt,
         }));
 
-    // Return the array of Ticket Objects with a 200 OK status
-    res.status(200).json(tickets);
+        // Return the array of Ticket Objects with a 200 OK status
+        res.status(200).json(tickets);
+    } catch (error) {
+        console.error('Database Error', error)
+        res.status(500).json({message: 'Database Error'});
+    }
 };
-
 module.exports = {
     getTickets
 };
