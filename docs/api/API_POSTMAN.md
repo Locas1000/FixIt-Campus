@@ -22,9 +22,10 @@ To avoid hardcoding `localhost` on every single request, this collection uses a 
 
 ##  4. Available Routes (Sprint 1)
 
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/tickets` | Fetches the full list of maintenance tickets directly from the PostgreSQL database. | No |
+| Method | Endpoint | Description                                                                                 | Auth Required |
+|:-------| :--- |:--------------------------------------------------------------------------------------------|:--------------|
+| `GET`  | `/api/tickets` | Fetches the full list of maintenance tickets directly from the PostgreSQL database.         | No            |
+| `POST` | `/api/tickets` | Creates new tickets with userID and the status is open it is saved in the postman database. | Yes           |
 
 *(This table and the Postman JSON file will be updated as the backend team builds out the POST, PUT, and Auth controllers!)*(This table will grow as we build out the POST, PUT, and Auth controllers!)*
 
