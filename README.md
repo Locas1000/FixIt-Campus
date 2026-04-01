@@ -57,7 +57,16 @@ git clone https://github.com/Locas1000/IDS-final-project.git
 cd IDS-final-project
 ```
 
-### 2\. Run the Application
+### 2\. Configuration (Environment Variables)
+
+Create a `.env` file in the root of the `backend` and `frontend` directories. You can copy the provided `.env.example` files:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+### 3\. Run the Application
 
 Lift the containers using Docker Compose:
 
@@ -67,10 +76,10 @@ docker compose up --build
 
 *(Use `-d` to run in the background).*
 
-### 3\. Access Services
+### 4\. Access Services
 
-  * **Frontend (React UI):** [http://localhost:5173](https://www.google.com/search?q=http://localhost:5173)
-  * **Backend API:** [http://localhost:5000](https://www.google.com/search?q=http://localhost:5000)
+  * **Frontend (React UI):** [http://localhost:5173](http://localhost:5173)
+  * **Backend API:** [http://localhost:5000](http://localhost:5000)
   * **Database:** `localhost:5432`
       * *User:* `admin` | *Password:* `password123` | *DB:* `sgm_db`
 
@@ -78,14 +87,18 @@ docker compose up --build
 
 ##  Database Initialization
 
-When running for the first time, your database will be empty. Follow one of these methods to populate the tables:
+When running for the first time, your database will be empty. Follow one of these methods to populate the tables and seed initial data:
 
 ### Method A: Terminal (Recommended)
 
-Inject the schema directly into the running container:
+Inject the schema and seed data directly into the running container:
 
 ```bash
+# 1. Create the schema
 docker exec -i sgm_postgres psql -U admin -d sgm_db < backend/database/schema.sql
+
+# 2. Populate with seed data
+docker exec -i sgm_postgres psql -U admin -d sgm_db < backend/database/seed.sql
 ```
 
 ### Method B: Visual (DBeaver/pgAdmin)
@@ -93,6 +106,7 @@ docker exec -i sgm_postgres psql -U admin -d sgm_db < backend/database/schema.sq
 1.  Connect using the credentials listed above.
 2.  Open a new SQL Editor.
 3.  Copy/Paste the contents of `backend/database/schema.sql` and execute.
+4.  Open another SQL Editor (or clear the previous one), copy/paste the contents of `backend/database/seed.sql` and execute.
 
 -----
 
