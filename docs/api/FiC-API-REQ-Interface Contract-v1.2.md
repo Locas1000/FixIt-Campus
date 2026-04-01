@@ -1,4 +1,4 @@
-# SGM API Interface Contract (v1.1)
+# SGM API Interface Contract (v1.2)
 
 This document defines the exact JSON structures the Backend will send and the Frontend will receive. **Do not deviate from these field names or data types.**
 
@@ -69,7 +69,8 @@ Represents a single state change in a ticket's lifecycle.
 
 ## 2. Primary Endpoints (REST API)
 
-Mathew will build these, and Carlo will fetch from them.
+*Note: All endpoints except `/api/auth/login` require a valid JWT passed in the headers:*
+`Authorization: Bearer <token>`
 
 * **`POST /api/auth/login`**
     * **Accepts:** `{ email, password }`
@@ -77,10 +78,12 @@ Mathew will build these, and Carlo will fetch from them.
 * **`GET /api/tickets`**
     * **Returns:** An array of `Ticket Objects`. *(Can accept query params like `?status=Open` for the Dispatcher dashboard).*
 * **`POST /api/tickets`**
-    * **Accepts:** `{ title, description, priority, images: [{ url, comment }] }`
+    * **Accepts:** `{ title, description, priority, evidence: [{ url, comment }] }`
     * **Returns:** The newly created `Ticket Object` with status "Open".
+    * *Note: `creatorId` is extracted securely from the JWT on the backend, not passed by the frontend.*
 * **`PUT /api/tickets/:id/status`**
     * **Accepts:** `{ newStatus, comment }`
-    * **Returns:** The updated `Ticket Object`. Used heavily by technicians and the Dispatcher.
+    * **Returns:** The updated `Ticket Object`. 
+    * *Note: The backend must insert a new record into the AuditLogs table using the provided `comment` and the `req.user.id` from the JWT.*
 * **`GET /api/tickets/:id/history`**
-    * **Returns:** An array of `Audit Log Objects` for a specific ticket to display its timeline
+    * **Returns:** An array of `Audit Log Objects` for a specific ticket to display its timeline.
