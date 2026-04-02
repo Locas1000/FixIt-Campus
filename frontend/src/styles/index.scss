@@ -1,0 +1,25 @@
+/* ==========================================
+   1. EXTERNAL IMPORTS (Fonts, etc.)
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ==========================================
+   2. BOOTSTRAP VARIABLE OVERRIDES
+   (Defining the "Linear" aesthetic)
+   ========================================== */
+
+// Typography
+// Define the variable
+$font-family-sans-serif: 'Inter', sans-serif;
+
+// Backgrounds & Colors
+$body-bg: #f7f8f9;
+$primary: #111111;
+
+// Borders & Framing
+$border-radius: 4px;
+
+// CORE BOOTSTRAP IMPORT (Must be last!)
+@import "bootstrap/scss/bootstrap";
+
+//4. CUSTOM UTILITIES & GLOBAL STYLES
