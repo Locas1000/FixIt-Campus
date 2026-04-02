@@ -1,0 +1,61 @@
+[
+  {
+    "id": 1001,
+    "title": "Loose hold on campus bouldering wall",
+    "description": "The large blue jug on the 45-degree overhang in the main rec center is spinning. It poses a safety hazard and needs to be tightened with an Allen wrench immediately.",
+    "status": "Assigned",
+    "priority": "High",
+    "slaDeadline": "2026-04-02T18:00:00Z",
+    "creatorId": 402,
+    "assignedTechnicianId": 12,
+    "evidence": [
+      {
+        "id": 1,
+        "url": "https://placehold.co/600x400/eeeeee/111111?text=Bouldering+Wall",
+        "comment": "Close up of the spinning hold.",
+        "uploadedAt": "2026-04-02T10:15:00Z"
+      }
+    ],
+    "createdAt": "2026-04-02T10:00:00Z",
+    "updatedAt": "2026-04-02T10:30:00Z"
+  },
+  {
+    "id": 1002,
+    "title": "Network outage in Computer Lab 3",
+    "description": "None of the desktop workstations in Lab 3 can connect to the internet. The main switch in the server closet shows a red error light.",
+    "status": "Open",
+    "priority": "High",
+    "slaDeadline": "2026-04-02T16:00:00Z",
+    "creatorId": 289,
+    "assignedTechnicianId": null,
+    "evidence": [],
+    "createdAt": "2026-04-02T12:45:00Z",
+    "updatedAt": "2026-04-02T12:45:00Z"
+  },
+  {
+    "id": 1003,
+    "title": "Leaking HVAC unit in Library",
+    "description": "Water is dripping from the ceiling vent in the quiet study zone on the second floor. We put a bucket under it, but it needs a permanent fix.",
+    "status": "Blocked",
+    "priority": "Medium",
+    "slaDeadline": "2026-04-05T12:00:00Z",
+    "creatorId": 115,
+    "assignedTechnicianId": 8,
+    "evidence": [
+      {
+        "id": 2,
+        "url": "https://placehold.co/600x400/eeeeee/111111?text=Ceiling+Leak",
+        "comment": "Bucket catching water.",
+        "uploadedAt": "2026-04-01T09:00:00Z"
+      },
+      {
+        "id": 3,
+        "url": "https://placehold.co/600x400/eeeeee/111111?text=HVAC+Unit",
+        "comment": "Internal shot of the condensation line.",
+        "uploadedAt": "2026-04-01T14:20:00Z"
+      }
+    ],
+    "createdAt": "2026-04-01T08:30:00Z",
+    "updatedAt": "2026-04-01T15:00:00Z"
+  }
+]

@@ -50,7 +50,7 @@ const createTickets = async(req, res) => {
             priority: newTicket.priority,
             slaDeadline: newTicket.sla_deadline || null,
             creatorId: newTicket.creator_id,
-            assignedTechnician: newTicket.assigned_technician || null,
+            assignedTechnicianId: newTicket.assigned_technician || null,
             evidence: [], // Evidence placeholder for future sprint
             createdAt: newTicket.created_at,
             updatedAt: newTicket.updated_at,
