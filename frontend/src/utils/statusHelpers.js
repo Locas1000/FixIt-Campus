@@ -3,10 +3,10 @@ export const getStatusColor = (status) => {
 
   switch (normalizedStatus) {
     case 'open':
-      return 'text-primary'; // Blue
+      return 'text-primary';
     case 'resolved':
-      return 'text-success'; // Green
+      return 'text-success'; 
     case 'blocked':
-      return 'text-danger';  // Red
+      return 'text-danger'; 
   }
 };
