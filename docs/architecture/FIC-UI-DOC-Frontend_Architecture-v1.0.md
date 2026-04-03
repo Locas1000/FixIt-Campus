@@ -61,7 +61,7 @@ const uploadToCloudinary = async (file) => {
   formData.append('file', file);
   formData.append('upload_preset', 'fixit_campus_tickets'); // The Unsigned Preset
 
-  const response = await fetch('[https://api.cloudinary.com/v1_1/](https://api.cloudinary.com/v1_1/)<YOUR_CLOUD_NAME>/image/upload', {
+  const response = await fetch('https://api.cloudinary.com/v1_1/<YOUR_CLOUD_NAME>/image/upload', {
     method: 'POST',
     body: formData
   });
