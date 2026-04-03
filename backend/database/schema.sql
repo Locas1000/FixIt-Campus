@@ -73,3 +73,10 @@ CREATE TABLE HistorialTickets (
     CONSTRAINT fk_historial_ticket FOREIGN KEY (id_ticket) REFERENCES Tickets(id) ON DELETE CASCADE,
     CONSTRAINT fk_historial_usuario FOREIGN KEY (id_usuario_cambio) REFERENCES Usuarios(id)
 );
+
+CREATE type Ticket_categoty as enum  (
+'Electrico', 'Plomeria' , 'HVAC', 'Carpinteria', 'IT', 'General')
+);
+
+ALTER TABLE Tickets 
+ADD COLUMN category ticket_category DEFAULT 'General' NOT NULL;
