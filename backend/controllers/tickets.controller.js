@@ -29,19 +29,46 @@ const getTickets = async(req, res) => {
 
 
 const createTickets = async(req, res) => {
-    const {title, description, priority, creatorId, category} = req.body;
+    const {title, description, priority, creatorId, category, evidence = []} = req.body;
     if (!title || !description || !priority || !creatorId || !category) {
         return res.status(400).json({message: 'Missing requierd fields'});
     }
+    let client;
     try {
-        const query = `
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        const ticketQuery = `
             INSERT INTO Tickets (title, description, priority, creator_id, status, category)
-            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+            VALUES ($1, $2, $3, $4, $5, $6)RETURNING *;
         `;
 
-        const values = [title, description, priority, creatorId, 'Open', category];
-        const result = await pool.query(query, values);
-        const newTicket = result.rows[0];
+        const ticketValues = [title, description, priority, creatorId, 'Open', category];
+        const ticketResult = await client.query(ticketQuery,ticketValues);
+        const newTicket = ticketResult.rows[0];
+
+        const savedEvidence = [];
+        if ( evidence.length > 0) {
+
+            const evidenceQuery = `
+                INSERT INTO Ticketimages (ticket_id, image_url, evidence_comment)
+                VALUES ($1, $2, $3) RETURNING *;`
+
+            for (const item of evidence) {
+                const evValues = [newTicket.id, item.url, item.comment || null];
+                const evResult = await client.query(evidenceQuery, evValues);
+                const savedImage = evResult.rows[0];
+
+               savedEvidence.push({
+                    id: savedImage.id,
+                    url: savedImage.image_url,
+                    comment: savedImage.evidence_comment,
+                    uploadedAt: savedImage.uploaded_at
+                });
+
+            }
+        }
+        await client.query('COMMIT');
 
         const formattedTicket = {
             id: newTicket.id,
@@ -53,14 +80,17 @@ const createTickets = async(req, res) => {
             slaDeadline: newTicket.sla_deadline || null,
             creatorId: newTicket.creator_id,
             assignedTechnicianId: newTicket.assigned_technician_id || null,
-            evidence: [], // Evidence placeholder for future sprint
+            evidence: savedEvidence,
             createdAt: newTicket.created_at,
             updatedAt: newTicket.updated_at,
         };
         res.status(201).json(formattedTicket);
     } catch (error) {
+        if (client) await client.query('ROLLBACK');
         console.error('Database Error during POST /api/tickets', error);
         res.status(500).json({message: 'Database Error'});
+    } finally {
+        if (client) client.release();
     }
 };
 
