@@ -1,4 +1,4 @@
-# SGM API Interface Contract (v1.2)
+# SGM API Interface Contract (v1.3)
 
 This document defines the exact JSON structures the Backend will send and the Frontend will receive. **Do not deviate from these field names or data types.**
 
@@ -29,6 +29,7 @@ Represents a maintenance incident reported on campus.
   "id": "integer",
   "title": "string",
   "description": "string",
+  "category": "Electrical | Plumbing | HVAC | Carpentry | IT | General",
   "status": "Open | Assigned | In Progress | Resolved | Confirmed | Closed | Blocked",
   "priority": "Low | Medium | High",
   "slaDeadline": "iso-8601-date | null",
@@ -75,10 +76,13 @@ Represents a single state change in a ticket's lifecycle.
 * **`POST /api/auth/login`**
     * **Accepts:** `{ email, password }`
     * **Returns:** `{ token, user: User Object }`
+  * **`POST /api/auth/register`
+  *  **Accepts:** `{ name, email, password, role }`
+  *  **Returns:** `{ token, user: User Object }`
 * **`GET /api/tickets`**
     * **Returns:** An array of `Ticket Objects`. *(Can accept query params like `?status=Open` for the Dispatcher dashboard).*
 * **`POST /api/tickets`**
-    * **Accepts:** `{ title, description, priority, evidence: [{ url, comment }] }`
+    * **Accepts:** `{ title, description,category, priority, evidence: [{ url, comment }] }`
     * **Returns:** The newly created `Ticket Object` with status "Open".
     * *Note: `creatorId` is extracted securely from the JWT on the backend, not passed by the frontend.*
 * **`PUT /api/tickets/:id/status`**
