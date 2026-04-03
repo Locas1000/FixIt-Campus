@@ -58,7 +58,7 @@ const createTickets = async(req, res) => {
             }).join(', ');
 
             const evidenceQuery = `
-                INSERT INTO Ticketimages (ticket_id, image_url, evidence_comment)
+                INSERT INTO TicketImages (ticket_id, image_url, evidence_comment)
                 VALUES ${evidencePlaceholders} RETURNING *;`;
 
             const evResult = await client.query(evidenceQuery, evidenceValues);
