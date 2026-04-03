@@ -50,23 +50,25 @@ const createTickets = async(req, res) => {
         const savedEvidence = [];
         if ( evidence.length > 0) {
 
+            const evidenceValues = [];
+            const evidencePlaceholders = evidence.map((item, index) => {
+                const baseIndex = index * 3;
+                evidenceValues.push(newTicket.id, item.url, item.comment || null);
+                return `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3})`;
+            }).join(', ');
+
             const evidenceQuery = `
                 INSERT INTO Ticketimages (ticket_id, image_url, evidence_comment)
-                VALUES ($1, $2, $3) RETURNING *;`
+                VALUES ${evidencePlaceholders} RETURNING *;`;
 
-            for (const item of evidence) {
-                const evValues = [newTicket.id, item.url, item.comment || null];
-                const evResult = await client.query(evidenceQuery, evValues);
-                const savedImage = evResult.rows[0];
+            const evResult = await client.query(evidenceQuery, evidenceValues);
 
-               savedEvidence.push({
-                    id: savedImage.id,
-                    url: savedImage.image_url,
-                    comment: savedImage.evidence_comment,
-                    uploadedAt: savedImage.uploaded_at
-                });
-
-            }
+            savedEvidence.push(...evResult.rows.map(savedImage => ({
+                id: savedImage.id,
+                url: savedImage.image_url,
+                comment: savedImage.evidence_comment,
+                uploadedAt: savedImage.uploaded_at
+            })));
         }
         await client.query('COMMIT');
 
