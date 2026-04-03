@@ -8,6 +8,7 @@ const getTickets = async(req, res) => {
             id: ticket.id,
             title: ticket.title,
             description: ticket.description,
+            category: ticket.category,
             status: ticket.status,
             priority: ticket.priority,
             slaDeadline: ticket.sla_deadline || null,
@@ -28,17 +29,17 @@ const getTickets = async(req, res) => {
 
 
 const createTickets = async(req, res) => {
-    const {title, description, priority, creatorId} = req.body;
-    if (!title || !description || !priority || !creatorId) {
+    const {title, description, priority, creatorId, category} = req.body;
+    if (!title || !description || !priority || !creatorId || !category) {
         return res.status(400).json({message: 'Missing requierd fields'});
     }
     try {
         const query = `
-            INSERT INTO Tickets (title, description, priority, creator_id, status)
-            VALUES ($1, $2, $3, $4, $5) RETURNING *;
+            INSERT INTO Tickets (title, description, priority, creator_id, status, category)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
         `;
 
-        const values = [title, description, priority, creatorId, 'Open'];
+        const values = [title, description, priority, creatorId, 'Open', category];
         const result = await pool.query(query, values);
         const newTicket = result.rows[0];
 
@@ -46,11 +47,12 @@ const createTickets = async(req, res) => {
             id: newTicket.id,
             title: newTicket.title,
             description: newTicket.description,
+            category: newTicket.category,
             status: newTicket.status,
             priority: newTicket.priority,
             slaDeadline: newTicket.sla_deadline || null,
             creatorId: newTicket.creator_id,
-            assignedTechnicianId: newTicket.assigned_technician || null,
+            assignedTechnicianId: newTicket.assigned_technician_id || null,
             evidence: [], // Evidence placeholder for future sprint
             createdAt: newTicket.created_at,
             updatedAt: newTicket.updated_at,
@@ -112,6 +114,7 @@ const updateTicketStatus = async (req,res) => {
             id: updatedTicket.id,
             title: updatedTicket.title,
             description: updatedTicket.description,
+            category: updatedTicket.category,
             status: updatedTicket.status,
             priority: updatedTicket.priority,
             slaDeadline: updatedTicket.sla_deadline || null,
