@@ -31,7 +31,7 @@ const getTickets = async(req, res) => {
 const createTickets = async(req, res) => {
     const {title, description, priority, creatorId, category, evidence = []} = req.body;
     if (!title || !description || !priority || !creatorId || !category) {
-        return res.status(400).json({message: 'Missing requierd fields'});
+        return res.status(400).json({message: 'Missing required fields'});
     }
     let client;
     try {
