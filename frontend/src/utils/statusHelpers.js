@@ -10,3 +10,10 @@ export const getStatusColor = (status) => {
       return 'text-danger'; 
   }
 };
+
+export const getPriorityColor = (priority) => {
+  const p = priority?.toLowerCase();
+  if (p === 'high') return 'bg-danger';
+  if (p === 'medium') return 'bg-warning text-dark';
+  return 'bg-info text-dark'; // Low or default
+};
