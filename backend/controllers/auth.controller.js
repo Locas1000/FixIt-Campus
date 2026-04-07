@@ -55,6 +55,9 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     const {name, email, password, role} = req.body;
 
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required.' });
+    }
     try {
         const userExists = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
         if (userExists.rows.length > 0){
@@ -84,6 +87,7 @@ const register = async (req, res) => {
             name: newUser.name,
             email: newUser.email,
             role: newUser.role,
+            specialty: newUser.specialty || null,
             avatarUrl: newUser.avatar_url || null,
             createdAt: newUser.created_at
         };
@@ -94,7 +98,6 @@ const register = async (req, res) => {
         });
 
     }catch(error) {
-        console.error("ERROR Register:", error);
         res.status(500).json({
             message: 'Internal Server Error',
             dev_info: error.message
