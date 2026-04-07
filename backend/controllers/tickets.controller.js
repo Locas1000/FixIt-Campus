@@ -202,7 +202,7 @@ const getTicketHistory = async (req,res) => {
 
     }catch(error){
         console.error('Error ticket History', error);
-        res.status(500).json({message: 'Internal Server Error', dev_info: error.message});
+        res.status(500).json({message: 'Internal Server Error'});
     }
 };
 
