@@ -191,7 +191,7 @@ const getTicketHistory = async (req,res) => {
         const history = result.rows.map(row => ({
             id: row.id,
             ticketId: row.ticket_id,
-            changedBy: row.changed_by_user_id,
+            changedByUserId: row.changed_by_user_id,
             previousStatus: row.previous_status,
             newStatus: row.new_status,
             changedAt: row.changed_at,
