@@ -123,7 +123,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"dispatcher@fixit.com\", \n  \"password\": \"password123\" \n}"
+              "raw": "{\n  \"email\": \"sara1@fixit.com\", \n  \"password\": \"password123\" \n}"
             },
             "url": {
               "raw": "http://localhost:5000/api/auth/login",
@@ -136,6 +136,37 @@
                 "api",
                 "auth",
                 "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Erick Newbie\",\n  \"email\": \"erick@fixit.com\",\n  \"password\": \"mySecurePassword123\"\n}\n{\n  \"name\": \"Maria Mechanic\",\n  \"email\": \"maria@fixit.com\",\n  \"password\": \"superSecretPassword\",\n  \"role\": \"Technician\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
               ]
             }
           },

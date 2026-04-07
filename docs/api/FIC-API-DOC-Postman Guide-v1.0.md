@@ -30,11 +30,12 @@ To avoid hardcoding `localhost` on every single request, this collection uses a 
 | Method | Endpoint | Description | Auth Required |
 |:-------| :--- |:---|:---|
 | `POST` | `/api/auth/login` | Authenticates a user and returns a JWT along with the User Object. Expects `email` and `password` in the body. | No |
+| `POST` | `/api/auth/register`| Registers a new user and returns a JWT along with the User Object. Expects `name`, `email`, and `password` in the body (optional `role`). | No |
 | `GET`  | `/api/tickets` | Fetches the full list of maintenance tickets directly from the PostgreSQL database. | **Yes** |
 | `POST` | `/api/tickets` | Creates a new maintenance ticket. Expects `title`, `description`, `category`, `priority`, and an optional `evidence` array. | **Yes** |
 | `PUT`  | `/api/tickets/:id/status` | Updates a ticket's status and automatically creates an Audit Log entry. Expects `newStatus`, `userId`, and `comment` in the body. | **Yes** |
 
-*(This table will be updated as the backend team builds out the Registration and Audit Log history routes!)*
+*(This table will be updated as the backend team builds out the Audit Log history routes!)*
 
 ## 5. How to Update and Share Changes (For Backend Team)
 
