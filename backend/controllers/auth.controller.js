@@ -52,8 +52,61 @@ const login = async (req, res) => {
     }
 };
 
+const register = async (req, res) => {
+    const {name, email, password, role} = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required.' });
+    }
+    try {
+        const userExists = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
+        if (userExists.rows.length > 0){
+            return res.status(409).json({message: 'Email already in use.'});
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const userRole = role || 'User';
+
+        const result = await db.query(
+            'INSERT INTO Users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, email, hashedPassword, userRole]
+        );
+
+        const newUser = result.rows[0];
+
+        const token = jwt.sign(
+            {id: newUser.id, role: newUser.role},
+            process.env.JWT_SECRET || 'secret_key_temporal',
+            {expiresIn: '24h'}
+        );
+
+        const userResponse = {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            specialty: newUser.specialty || null,
+            avatarUrl: newUser.avatar_url || null,
+            createdAt: newUser.created_at
+        };
+
+        res.status(201).json({
+            token,
+            user: userResponse
+        });
+
+    }catch(error) {
+        res.status(500).json({
+            message: 'Internal Server Error',
+            dev_info: error.message
+        });
+    }
+}
 
 module.exports = {
-    login
+    login,
+    register
 };
 
