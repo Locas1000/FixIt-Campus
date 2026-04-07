@@ -168,8 +168,47 @@ const updateTicketStatus = async (req,res) => {
     }
 };
 
+const getTicketHistory = async (req,res) => {
+    const {id} = req.params;
+
+    try{
+        const query = `
+            SELECT
+                id,
+                ticket_id,
+                previous_status,
+                new_status,
+                changed_by_user_id,
+                change_comment,
+                changed_at
+            FROM tickethistory
+            WHERE ticket_id = $1
+            ORDER BY changed_at DESC
+        `;
+
+        const result = await pool.query(query, [id]);
+
+        const history = result.rows.map(row => ({
+            id: row.id,
+            ticketId: row.ticket_id,
+            changedBy: row.changed_by_user_id,
+            previousStatus: row.previous_status,
+            newStatus: row.new_status,
+            changedAt: row.changed_at,
+            comment: row.change_comment
+        }));
+
+        res.status(200).json(history);
+
+    }catch(error){
+        console.error('Error ticket History', error);
+        res.status(500).json({message: 'Internal Server Error', dev_info: error.message});
+    }
+};
+
 module.exports = {
     getTickets,
     createTickets,
-    updateTicketStatus
+    updateTicketStatus,
+    getTicketHistory
 };
