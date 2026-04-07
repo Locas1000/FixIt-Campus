@@ -1,8 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
 const db = require('../config/db');
-const router = require("../routes/auth.routes");
 
 const login = async (req, res) => {
     const {email, password} = req.body;
@@ -11,13 +9,13 @@ const login = async (req, res) => {
         const result = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
         const user = result.rows[0];
 
-        console.log("Usuario encontrado:", user);
 
         if (!user) {
             return res.status(401).json({message: 'Unauthorized'});
         }
 
-        const isMatch = (password === user.password_hash);
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+
         if (!isMatch) {
             return res.status(401).json({message: 'Unauthorized'});
         }
@@ -44,14 +42,16 @@ const login = async (req, res) => {
         });
 
     } catch(error){
-        console.error("ERROR Login",error);
+        // Log the full error to the backend terminal securely
+        console.error("ERROR Login:", error);
+
+        // Only send a generic error to the frontend
         res.status(500).json({
-            message: 'Internal Server Error',
-            error: error.message,
-            stack: error.stack
+            message: 'Internal Server Error'
         });
     }
 };
+
 
 module.exports = {
     login
