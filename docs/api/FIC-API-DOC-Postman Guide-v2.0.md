@@ -1,3 +1,4 @@
+
 # FixIt Campus API - POSTMAN guide
 
 Welcome to the API documentation for FixIt Campus. We use a shared Postman collection stored directly in this repository to standardize our backend testing and make frontend integration as seamless as possible.
@@ -34,8 +35,9 @@ To avoid hardcoding `localhost` on every single request, this collection uses a 
 | `GET`  | `/api/tickets` | Fetches the full list of maintenance tickets directly from the PostgreSQL database. | **Yes** |
 | `POST` | `/api/tickets` | Creates a new maintenance ticket. Expects `title`, `description`, `category`, `priority`, and an optional `evidence` array. | **Yes** |
 | `PUT`  | `/api/tickets/:id/status` | Updates a ticket's status and automatically creates an Audit Log entry. Expects `newStatus`, `userId`, and `comment` in the body. | **Yes** |
+| `GET`  | `/api/tickets/:id/history` | Fetches the audit log history for a specific ticket, ordered from newest to oldest. | **Yes** |
 
-*(This table will be updated as the backend team builds out the Audit Log history routes!)*
+*(End of Sprint 1 Routes. Future sprints will include query parameters for filtering and Role-Based Access Control!)*
 
 ## 5. How to Update and Share Changes (For Backend Team)
 
