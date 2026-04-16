@@ -26,7 +26,6 @@ const TicketCard = ({ ticket }) => {
         <div className="text-muted">
           Created: {dateFormatted}
         </div>
-        {/* Status text using our previous helper */}
         <span className={`fw-semibold ${getStatusColor(status)}`}>
           {status}
         </span>
