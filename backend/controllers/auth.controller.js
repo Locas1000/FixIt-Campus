@@ -134,7 +134,11 @@ const googleLogin = async (req, res) => {
         }
 
         const googleUser = await googleResponse.json();
-        const { email, name, picture } = googleUser;
+        const { email, email_verified, name, picture } = googleUser;
+
+        if (!email || (email_verified !== true && email_verified !== 'true')) {
+            return res.status(400).json({ message: 'Google account email must be present and verified' });
+        }
 
         // 3. Database logic stays the exact same!
         let result = await db.query('SELECT * FROM Users WHERE email = $1', [email]);
