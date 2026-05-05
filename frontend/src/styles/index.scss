@@ -4,22 +4,101 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ==========================================
-   2. BOOTSTRAP VARIABLE OVERRIDES
-   (Defining the "Linear" aesthetic)
+   2. BOOTSTRAP VARIABLE OVERRIDES (Base/Light Mode)
    ========================================== */
-
 // Typography
-// Define the variable
 $font-family-sans-serif: 'Inter', sans-serif;
 
-// Backgrounds & Colors
+// Backgrounds & Colors (Light Mode Defaults)
 $body-bg: #f7f8f9;
-$primary: #111111;
+$body-color: #111111;
 
-// Borders & Framing
-$border-radius: 4px;
+// Borders & Framing (Slightly rounder for that modern pill look)
+$border-radius: 6px;
+$border-radius-pill: 50rem;
 
-// CORE BOOTSTRAP IMPORT (Must be last!)
+// CORE BOOTSTRAP IMPORT (Must be exactly here!)
 @import "bootstrap/scss/bootstrap";
 
-//4. CUSTOM UTILITIES & GLOBAL STYLES
+/* ==========================================
+   3. THEME OVERRIDES (The Linear Aesthetic)
+   ========================================== */
+
+// Base Colors (Shared across both modes)
+:root {
+  --google-btn-bg: #5a67d8; // The specific indigo from the reference
+  --google-btn-hover: #4c51bf;
+  --auth-border-color: #e5e7eb;
+  --auth-btn-bg: #ffffff;
+  --auth-btn-text: #111111;
+  --auth-btn-hover: #f3f4f6;
+  --auth-input-bg: #ffffff;
+}
+
+// Dark Mode Overrides (Triggered by data-bs-theme="dark")
+[data-bs-theme="dark"] {
+  // Bootstrap Native Variables
+  --bs-body-bg: #000000;         // Absolute black background
+  --bs-body-color: #ffffff;      // Crisp white text
+  --bs-secondary-color: #a1a1aa; // Muted text for subheadings/links
+
+  // Custom Auth Variables
+  --auth-border-color: #27272A;  // Very subtle dark gray border
+  --auth-btn-bg: #18181b;        // Dark gray secondary buttons
+  --auth-btn-text: #ffffff;
+  --auth-btn-hover: #27272A;
+  --auth-input-bg: #09090b;      // Slightly elevated black for inputs
+}
+
+/* ==========================================
+   4. CUSTOM UTILITIES & GLOBAL STYLES
+   ========================================== */
+
+// Shared container for Login/Register to keep it perfectly narrow
+.auth-container {
+  max-width: 360px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+// The prominent Google button
+.btn-google {
+  background-color: var(--google-btn-bg);
+  color: #ffffff;
+  border: none;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+
+  &:hover, &:focus {
+    background-color: var(--google-btn-hover);
+    color: #ffffff;
+  }
+}
+
+// The secondary buttons (Email, SAML, Passkey)
+.btn-auth-secondary {
+  background-color: var(--auth-btn-bg);
+  color: var(--auth-btn-text);
+  border: 1px solid var(--auth-border-color);
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover, &:focus {
+    background-color: var(--auth-btn-hover);
+    color: var(--auth-btn-text);
+  }
+}
+
+// Linear-style form inputs (No bubbly shadows)
+.form-control-linear {
+  background-color: var(--auth-input-bg);
+  border: 1px solid var(--auth-border-color);
+  color: var(--bs-body-color);
+  box-shadow: none !important; // Kill default Bootstrap glow
+
+  &:focus {
+    background-color: var(--auth-input-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-body-color); // Sharp contrast border on focus
+  }
+}
