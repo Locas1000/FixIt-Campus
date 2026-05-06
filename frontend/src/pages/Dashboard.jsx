@@ -1,69 +1,59 @@
-import { useState } from 'react';
-import dummyTickets from '../data/dummyTickets.json';
+// src/pages/Dashboard.jsx
+import { useState, useEffect } from 'react';
+import { ticketService } from '../services/ticketService';
 
-// Child Components (Your dev will create these in the components folder)
+// Layout Components
 import Sidebar from '../components/layouts/Sidebar';
 import TicketFeed from '../components/domain/TicketFeed';
-import TicketDetailPanel from '../components/domain/TicketDetailPanel';
+import AssigneeSidebar from '../components/domain/AssigneeSidebar';
 
 export default function Dashboard() {
-  // 1. The Application State (The "Brain")
-  // Null means no ticket is currently selected by the user.
-  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [tickets, setTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // 2. Responsive Mobile State
-  // Since mobile can only show one pane at a time, we track the active view.
-  // Options: 'sidebar', 'feed', 'detail'
   const [activeMobileView, setActiveMobileView] = useState('feed');
-
-  // 3. User Role Mock (Until authentication is implemented)
   const currentUserRole = 'Dispatcher';
 
-  // Helper to handle ticket selection and force mobile view to details
-  const handleTicketSelect = (ticket) => {
-    setSelectedTicket(ticket);
-    setActiveMobileView('detail');
-  };
+  // Fetch Tickets on Mount
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setIsLoading(true);
+        const data = await ticketService.getTickets();
+        setTickets(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   return (
-    <div className="d-flex vh-100 w-100 overflow-hidden bg-body-bg text-body-color">
+    <div className="d-flex vh-100 w-100 overflow-hidden bg-body-bg text-body-color" data-bs-theme="dark">
 
-      {/* =========================================
-          PANE 1: SIDEBAR
-          ========================================= */}
-      {/* Hide on mobile unless activeMobileView === 'sidebar' */}
-      <div className={`border-end border-color ${activeMobileView === 'sidebar' ? 'd-block w-100' : 'd-none d-md-block'}`} style={{ width: '250px' }}>
+      {/* PANE 1: LEFT SIDEBAR */}
+      <div className={`border-end border-color ${activeMobileView === 'sidebar' ? 'd-block w-100' : 'd-none d-md-block'}`} style={{ width: '240px', borderColor: 'var(--auth-border-color)' }}>
         <Sidebar role={currentUserRole} />
       </div>
 
-      {/* =========================================
-          PANE 2: TICKET FEED (The List)
-          ========================================= */}
-      {/* Hide on mobile unless activeMobileView === 'feed' */}
-      <div className={`d-flex flex-column border-end border-color ${activeMobileView === 'feed' ? 'd-flex w-100' : 'd-none d-md-flex'}`} style={{ width: '350px', backgroundColor: '#ffffff' }}>
-        <TicketFeed
-          tickets={dummyTickets}
-          onTicketClick={handleTicketSelect}
-          activeTicketId={selectedTicket?.id}
-        />
+      {/* PANE 2: MAIN TICKET FEED */}
+      <div className={`d-flex flex-column border-end border-color flex-grow-1 ${activeMobileView === 'feed' ? 'd-flex w-100' : 'd-none d-md-flex'}`} style={{ borderColor: 'var(--auth-border-color)' }}>
+        {isLoading ? (
+          <div className="h-100 d-flex align-items-center justify-content-center text-muted">Loading workspace...</div>
+        ) : error ? (
+          <div className="h-100 d-flex align-items-center justify-content-center text-danger">{error}</div>
+        ) : (
+          <TicketFeed tickets={tickets} />
+        )}
       </div>
 
-      {/* =========================================
-          PANE 3: TICKET DETAIL PANEL
-          ========================================= */}
-      {/* Hide on mobile unless activeMobileView === 'detail' */}
-      <div className={`flex-grow-1 bg-body-bg ${activeMobileView === 'detail' ? 'd-block w-100' : 'd-none d-md-block'}`}>
-        {selectedTicket ? (
-          <TicketDetailPanel
-            ticket={selectedTicket}
-            onBackToFeed={() => setActiveMobileView('feed')}
-          />
-        ) : (
-          // Empty State when no ticket is clicked
-          <div className="h-100 d-flex align-items-center justify-content-center text-muted">
-            <p>Select a ticket from the feed to view details.</p>
-          </div>
-        )}
+      {/* PANE 3: RIGHT ASSIGNEE/METRICS SIDEBAR */}
+      <div className={`bg-body-bg ${activeMobileView === 'metrics' ? 'd-block w-100' : 'd-none d-xl-block'}`} style={{ width: '300px' }}>
+        <AssigneeSidebar tickets={tickets} />
       </div>
 
     </div>
