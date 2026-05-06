@@ -1,61 +1,125 @@
 // src/pages/Dashboard.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ticketService } from '../services/ticketService';
 
 // Layout Components
 import Sidebar from '../components/layouts/Sidebar';
 import TicketFeed from '../components/domain/TicketFeed';
 import AssigneeSidebar from '../components/domain/AssigneeSidebar';
+import TicketDetailPanel from '../components/domain/TicketDetailPanel';
 
 export default function Dashboard() {
-  const [tickets, setTickets] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const [tickets, setTickets] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const [activeMobileView, setActiveMobileView] = useState('feed');
-  const currentUserRole = 'Dispatcher';
+    // The currently selected ticket (null = no selection, show AssigneeSidebar)
+    const [selectedTicket, setSelectedTicket] = useState(null);
 
-  // Fetch Tickets on Mount
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        setIsLoading(true);
-        const data = await ticketService.getTickets();
-        setTickets(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
+    // Mobile: 'sidebar' | 'feed' | 'detail'
+    const [activeMobileView, setActiveMobileView] = useState('feed');
+
+    const currentUserRole = 'Dispatcher';
+
+    // Fetch all tickets on mount
+    useEffect(() => {
+        const fetchTickets = async () => {
+            try {
+                setIsLoading(true);
+                const data = await ticketService.getTickets();
+                setTickets(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchTickets();
+    }, []);
+
+    // Called when a TicketRow is clicked
+    const handleSelectTicket = useCallback((ticket) => {
+        setSelectedTicket(ticket);
+        setActiveMobileView('detail');
+    }, []);
+
+    // Called when a ticket is updated inside the detail panel (optimistic sync)
+    const handleTicketUpdated = useCallback((updatedTicket) => {
+        setTickets(prev =>
+            prev.map(t => t.id === updatedTicket.id ? updatedTicket : t)
+        );
+        setSelectedTicket(updatedTicket);
+    }, []);
+
+    // Mobile back button handler
+    const handleBackToFeed = () => {
+        setActiveMobileView('feed');
+        setSelectedTicket(null);
     };
 
-    fetchTickets();
-  }, []);
+    return (
+        <div className="d-flex vh-100 w-100 overflow-hidden bg-body-bg text-body-color" data-bs-theme="dark">
 
-  return (
-    <div className="d-flex vh-100 w-100 overflow-hidden bg-body-bg text-body-color" data-bs-theme="dark">
+            {/* PANE 1: LEFT SIDEBAR — always visible on md+ */}
+            <div
+                className={`border-end ${activeMobileView === 'sidebar' ? 'd-block w-100' : 'd-none d-md-block'}`}
+                style={{ width: '240px', flexShrink: 0, borderColor: 'var(--auth-border-color)' }}
+            >
+                <Sidebar role={currentUserRole} />
+            </div>
 
-      {/* PANE 1: LEFT SIDEBAR */}
-      <div className={`border-end border-color ${activeMobileView === 'sidebar' ? 'd-block w-100' : 'd-none d-md-block'}`} style={{ width: '240px', borderColor: 'var(--auth-border-color)' }}>
-        <Sidebar role={currentUserRole} />
-      </div>
+            {/* PANE 2: TICKET FEED — fixed width when detail is open, full width otherwise */}
+            <div
+                className={`d-flex flex-column border-end ${activeMobileView === 'feed' ? 'd-flex w-100' : 'd-none d-md-flex'}`}
+                style={{
+                    width: selectedTicket ? '340px' : undefined,
+                    flexShrink: selectedTicket ? 0 : undefined,
+                    flex: selectedTicket ? undefined : '1',
+                    borderColor: 'var(--auth-border-color)',
+                    transition: 'width 0.2s ease',
+                }}
+            >
+                {isLoading ? (
+                    <div className="h-100 d-flex align-items-center justify-content-center text-muted">
+                        Loading workspace...
+                    </div>
+                ) : error ? (
+                    <div className="h-100 d-flex align-items-center justify-content-center text-danger">
+                        {error}
+                    </div>
+                ) : (
+                    <TicketFeed
+                        tickets={tickets}
+                        onSelectTicket={handleSelectTicket}
+                        selectedTicketId={selectedTicket?.id}
+                    />
+                )}
+            </div>
 
-      {/* PANE 2: MAIN TICKET FEED */}
-      <div className={`d-flex flex-column border-end border-color flex-grow-1 ${activeMobileView === 'feed' ? 'd-flex w-100' : 'd-none d-md-flex'}`} style={{ borderColor: 'var(--auth-border-color)' }}>
-        {isLoading ? (
-          <div className="h-100 d-flex align-items-center justify-content-center text-muted">Loading workspace...</div>
-        ) : error ? (
-          <div className="h-100 d-flex align-items-center justify-content-center text-danger">{error}</div>
-        ) : (
-          <TicketFeed tickets={tickets} />
-        )}
-      </div>
+            {/* PANE 3: DETAIL PANEL or ASSIGNEE SIDEBAR */}
+            <div
+                className={`flex-grow-1 overflow-hidden ${
+                    activeMobileView === 'detail'
+                        ? 'd-flex w-100'
+                        : activeMobileView === 'metrics'
+                            ? 'd-block w-100'
+                            : selectedTicket
+                                ? 'd-flex'           // show detail on desktop
+                                : 'd-none d-xl-block' // show assignee sidebar on xl
+                }`}
+                style={{ minWidth: 0 }}
+            >
+                {selectedTicket ? (
+                    <TicketDetailPanel
+                        ticket={selectedTicket}
+                        onBackToFeed={handleBackToFeed}
+                        onTicketUpdated={handleTicketUpdated}
+                    />
+                ) : (
+                    <AssigneeSidebar tickets={tickets} />
+                )}
+            </div>
 
-      {/* PANE 3: RIGHT ASSIGNEE/METRICS SIDEBAR */}
-      <div className={`bg-body-bg ${activeMobileView === 'metrics' ? 'd-block w-100' : 'd-none d-xl-block'}`} style={{ width: '300px' }}>
-        <AssigneeSidebar tickets={tickets} />
-      </div>
-
-    </div>
-  );
+        </div>
+    );
 }
