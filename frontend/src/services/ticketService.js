@@ -4,9 +4,8 @@ const API_URL = import.meta.env.VITE_API_BASE_URL
     ? `${import.meta.env.VITE_API_BASE_URL}/tickets`
     : 'http://localhost:5000/api/tickets';
 
-// Helper to get the auth header
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('token'); // Adjust if you use Context/Cookies
+    const token = localStorage.getItem('fixit_token');
     return {
         headers: {
             Authorization: `Bearer ${token}`
@@ -14,9 +13,6 @@ const getAuthHeaders = () => {
     };
 };
 
-/**
- * Fetches all tickets from the database.
- */
 const getTickets = async () => {
     try {
         const response = await axios.get(API_URL, getAuthHeaders());
@@ -27,8 +23,17 @@ const getTickets = async () => {
 };
 
 /**
- * Creates a new ticket.
+ * Fetches a single ticket by its ID.
  */
+const getTicketById = async (id) => {
+    try {
+        const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch ticket.');
+    }
+};
+
 const createTicket = async (ticketData) => {
     try {
         const response = await axios.post(API_URL, ticketData, getAuthHeaders());
@@ -38,12 +43,9 @@ const createTicket = async (ticketData) => {
     }
 };
 
-/**
- * Updates a ticket's status.
- */
 const updateTicketStatus = async (id, newStatus, comment, userId) => {
     try {
-        const response = await axios.put(`${API_URL}/${id}/status`, { // Adjusted to standard REST path
+        const response = await axios.put(`${API_URL}/${id}/status`, {
             newStatus,
             comment,
             userId
@@ -54,8 +56,22 @@ const updateTicketStatus = async (id, newStatus, comment, userId) => {
     }
 };
 
+/**
+ * Fetches the full audit history for a ticket.
+ */
+const getTicketHistory = async (id) => {
+    try {
+        const response = await axios.get(`${API_URL}/${id}/history`, getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch ticket history.');
+    }
+};
+
 export const ticketService = {
     getTickets,
+    getTicketById,
     createTicket,
-    updateTicketStatus
+    updateTicketStatus,
+    getTicketHistory,
 };
