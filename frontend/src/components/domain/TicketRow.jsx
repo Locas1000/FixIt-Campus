@@ -1,3 +1,4 @@
+// src/components/domain/TicketRow.jsx
 import React from 'react';
 
 // Status icon mapping to match the Linear aesthetic
@@ -38,18 +39,18 @@ export default function TicketRow({ ticket, isLast, onSelect, isSelected }) {
                 <span style={{ color: statusDef.color, fontSize: '0.8rem' }}>{statusDef.icon}</span>
             </div>
 
-            {/* ID */}
-            <div className="text-muted text-uppercase me-3 flex-shrink-0" style={{ fontSize: '0.75rem', width: '80px', letterSpacing: '0.5px' }}>
+            {/* ID - Narrowed width to save space */}
+            <div className="text-muted text-uppercase me-2 flex-shrink-0" style={{ fontSize: '0.75rem', width: '55px', letterSpacing: '0.5px' }}>
                 TKT-{String(ticket.id).substring(0, 4)}
             </div>
 
-            {/* Title */}
-            <div className="flex-grow-1 text-truncate" style={{ fontSize: '0.875rem', color: 'var(--bs-body-color)' }}>
+            {/* Title - The Magic Fix: minWidth: 0 lets text-truncate work inside flexbox */}
+            <div className="flex-grow-1 text-truncate pe-2" style={{ fontSize: '0.875rem', color: 'var(--bs-body-color)', minWidth: 0 }}>
                 {ticket.title}
             </div>
 
-            {/* Properties (Right Aligned) */}
-            <div className="d-flex align-items-center gap-3 ms-3">
+            {/* Properties (Right Aligned) - Added flex-shrink-0 so it never squishes */}
+            <div className="d-flex align-items-center gap-2 flex-shrink-0">
                 {/* Priority badge */}
                 <span style={{
                     fontSize: '0.68rem',
@@ -64,19 +65,8 @@ export default function TicketRow({ ticket, isLast, onSelect, isSelected }) {
                     {ticket.priority}
                 </span>
 
-                {/* Category Badge */}
-                <span className="badge rounded-pill border d-none d-lg-inline" style={{
-                    backgroundColor: 'transparent',
-                    borderColor: 'var(--auth-border-color)',
-                    color: 'var(--bs-secondary-color)',
-                    fontWeight: 'normal',
-                    fontSize: '0.7rem'
-                }}>
-                    {ticket.category}
-                </span>
-
-                {/* Date */}
-                <div className="text-end text-muted d-none d-sm-block" style={{ fontSize: '0.75rem', width: '60px' }}>
+                {/* Date - Replaced responsive classes with a CSS trick to hide on squeeze if needed, but it should fit now */}
+                <div className="text-end text-muted d-none d-lg-block" style={{ fontSize: '0.75rem', width: '45px' }}>
                     {new Date(ticket.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
 
