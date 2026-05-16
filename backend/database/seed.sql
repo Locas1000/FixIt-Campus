@@ -8,7 +8,7 @@ INSERT INTO Users (name, role, email, password_hash, specialty) VALUES
 ('Carlos Ruiz', 'Technician', 'carlos.tech@sgm.com', '12345', 'Industrial Electricity');
 
 -- 2. Create 5 Tickets with various statuses and priorities
-INSERT INTO Tickets (title, description, status, priority, creator_id, assigned_technician_id) VALUES
+INSERT INTO Tickets (title, dellscription, status, priority, creator_id, assigned_technician_id) VALUES
 ('A/C Failure A-202', 'The air conditioning will not turn on and makes a metallic noise.', 'Open', 'High', 1, NULL),
 ('Leak in Lab 3', 'Water leak detected near the server rack.', 'Assigned', 'High', 1, 3),
 ('Elevator Preventive Maintenance', 'Monthly check of cables and sensors in the north elevator.', 'In Progress', 'Medium', 2, 3),

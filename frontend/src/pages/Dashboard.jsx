@@ -1,32 +1,32 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { useOutlet,useLocation} from 'react-router-dom'; // <-- 1. Import useOutlet
+import { useOutlet, useLocation } from 'react-router-dom';
 import { ticketService } from '../services/ticketService';
 
-// Layout Components
 import Sidebar from '../components/layouts/Sidebar';
 import TicketFeed from '../components/domain/TicketFeed';
 import AssigneeSidebar from '../components/domain/AssigneeSidebar';
 import TicketDetailPanel from '../components/domain/TicketDetailPanel';
 
+// IMPORT THE MODAL
+import CreateTicketModal from '../components/domain/CreateTicketModal';
+
 export default function Dashboard() {
     const [tickets, setTickets] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    // The currently selected ticket (null = no selection, show AssigneeSidebar)
     const [selectedTicket, setSelectedTicket] = useState(null);
-
-    // Mobile: 'sidebar' | 'feed' | 'detail'
     const [activeMobileView, setActiveMobileView] = useState('feed');
 
-    // <-- 2. Hook to check if a nested route (like Settings) is active
+    // MODAL STATE
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
     const outlet = useOutlet();
-    const location = useLocation(); // <-- Add this
+    const location = useLocation();
 
     const currentUserRole = 'Dispatcher';
     const showWorkspaceFeed = location.pathname === '/dashboard';
-    // Fetch all tickets on mount
+
     useEffect(() => {
         const fetchTickets = async () => {
             try {
@@ -42,13 +42,11 @@ export default function Dashboard() {
         fetchTickets();
     }, []);
 
-    // Called when a TicketRow is clicked
     const handleSelectTicket = useCallback((ticket) => {
         setSelectedTicket(ticket);
         setActiveMobileView('detail');
     }, []);
 
-    // Called when a ticket is updated inside the detail panel (optimistic sync)
     const handleTicketUpdated = useCallback((updatedTicket) => {
         setTickets(prev =>
             prev.map(t => t.id === updatedTicket.id ? updatedTicket : t)
@@ -56,33 +54,39 @@ export default function Dashboard() {
         setSelectedTicket(updatedTicket);
     }, []);
 
-    // Mobile back button handler
     const handleBackToFeed = () => {
         setActiveMobileView('feed');
         setSelectedTicket(null);
     };
 
+    // INSTANT FEED UPDATE
+    const handleTicketCreated = useCallback((newTicket) => {
+        setTickets(prev => [newTicket, ...prev]);
+    }, []);
+
     return (
         <div className="d-flex vh-100 w-100 overflow-hidden bg-body-bg text-body-color" data-bs-theme="dark">
 
-            {/* PANE 1: LEFT SIDEBAR — always visible on md+ (THIS IS WHAT WENT MISSING!) */}
+            {/* PANE 1: LEFT SIDEBAR */}
             <div
-                className={`border-end ${activeMobileView === 'sidebar' ? 'd-block w-100' : 'd-none d-md-block'}`}
+                className={`border-end ${activeMobileView === 'sidebar' ? 'd-flex w-100' : 'd-none d-md-flex'}`}
                 style={{width: '240px', flexShrink: 0, borderColor: 'var(--auth-border-color)'}}
             >
-                <Sidebar role={currentUserRole}/>
+                {/* PASSING THE PROP TO THE SIDEBAR! */}
+                <Sidebar
+                    role={currentUserRole}
+                    onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                />
             </div>
 
             {/* DYNAMIC CONTENT SWITCHER */}
             {!showWorkspaceFeed ? (
-                /* IF NESTED ROUTE (e.g., /settings or /triage) */
                 <div
                     className={`flex-grow-1 overflow-auto ${activeMobileView === 'sidebar' ? 'd-none d-md-block' : 'd-block'}`}
                     style={{backgroundColor: '#09090b'}}>
                     {outlet}
                 </div>
             ) : (
-                /* IF /dashboard: Render your 3-Pane Workspace with actual data */
                 <>
                     {/* PANE 2: TICKET FEED */}
                     <div
@@ -112,7 +116,7 @@ export default function Dashboard() {
                         )}
                     </div>
 
-                    {/* PANE 3: DETAIL PANEL or ASSIGNEE SIDEBAR */}
+                    {/* PANE 3: DETAIL PANEL */}
                     <div
                         className={`flex-grow-1 overflow-hidden ${
                             activeMobileView === 'detail'
@@ -120,8 +124,8 @@ export default function Dashboard() {
                                 : activeMobileView === 'metrics'
                                     ? 'd-block w-100'
                                     : selectedTicket
-                                        ? 'd-flex'           // show detail on desktop
-                                        : 'd-none d-xl-block' // show assignee sidebar on xl
+                                        ? 'd-flex'
+                                        : 'd-none d-xl-block'
                         }`}
                         style={{minWidth: 0}}
                     >
@@ -137,6 +141,14 @@ export default function Dashboard() {
                     </div>
                 </>
             )}
+
+            {/* MOUNT THE MODAL OUTSIDE OF THE FLEXBOX GRID */}
+            <CreateTicketModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onTicketCreated={handleTicketCreated}
+            />
+
         </div>
     );
 }

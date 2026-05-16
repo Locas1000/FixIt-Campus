@@ -68,10 +68,37 @@ const getTicketHistory = async (id) => {
     }
 };
 
+const updateTicketAssignee = async (id, assigneeId, userId) => {
+    try {
+        const response = await axios.put(`${API_URL}/${id}/assignee`, {
+            assigneeId,
+            userId
+        }, getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Failed to update assignee.');
+    }
+};
+
+const updateTicketPriority = async (id, priority, userId) => {
+    try {
+        const response = await axios.put(`${API_URL}/${id}/priority`, {
+            priority,
+            userId
+        }, getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Failed to update priority.');
+    }
+};
+
 export const ticketService = {
     getTickets,
     getTicketById,
     createTicket,
     updateTicketStatus,
     getTicketHistory,
+    updateTicketAssignee, // <-- NEW
+    updateTicketPriority, // <-- NEW
 };
+
