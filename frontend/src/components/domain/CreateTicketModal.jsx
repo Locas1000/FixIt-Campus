@@ -98,7 +98,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                     width: '100%',
                     maxWidth: '550px',
                     maxHeight: '90vh',
-                    backgroundColor: '#09090b',
+                    backgroundColor: 'var(--auth-input-bg)',
                     border: '1px solid var(--auth-border-color)',
                     color: 'var(--bs-body-color)'
                 }}
@@ -119,7 +119,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                             <input
                                 type="text"
                                 className="form-control"
-                                style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: '#fff' }}
+                                style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: 'var(--bs-body-color)' }}
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="E.g., A/C leaking in Room 101"
@@ -132,7 +132,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                                 <label className="form-label text-muted" style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</label>
                                 <select
                                     className="form-select"
-                                    style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: '#fff' }}
+                                    style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: 'var(--bs-body-color)' }}
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
                                     required
@@ -149,7 +149,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                                 <label className="form-label text-muted" style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Priority</label>
                                 <select
                                     className="form-select"
-                                    style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: '#fff' }}
+                                    style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: 'var(--bs-body-color)' }}
                                     value={priority}
                                     onChange={(e) => setPriority(e.target.value)}
                                 >
@@ -165,7 +165,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                             <textarea
                                 className="form-control"
                                 rows="3"
-                                style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: '#fff', resize: 'none' }}
+                                style={{ backgroundColor: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)', color: 'var(--bs-body-color)', resize: 'none' }}
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Provide detailed information about the issue..."
@@ -182,7 +182,7 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                                     className="d-flex flex-column align-items-center justify-content-center p-4 rounded"
                                     style={{ border: '1px dashed var(--bs-secondary-color)', backgroundColor: 'var(--auth-input-bg)', cursor: 'pointer', transition: 'background 0.2s' }}
                                     onClick={() => fileInputRef.current?.click()}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e1e2e'}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--auth-btn-bg)'}
                                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--auth-input-bg)'}
                                 >
                                     <i className="bi bi-camera text-muted mb-2" style={{ fontSize: '1.5rem' }}></i>
@@ -215,11 +215,11 @@ export default function CreateTicketModal({ isOpen, onClose, onTicketCreated }) 
                 </div>
 
                 {/* Footer */}
-                <div className="p-3 border-top d-flex justify-content-end gap-2" style={{ borderColor: 'var(--auth-border-color)', backgroundColor: '#000000' }}>
+                <div className="p-3 border-top d-flex justify-content-end gap-2" style={{ borderColor: 'var(--auth-border-color)', backgroundColor: 'var(--bs-body-bg)' }}>
                     <button type="button" className="btn btn-outline-secondary" onClick={handleClose} disabled={isSubmitting}>
                         Cancel
                     </button>
-                    <button type="submit" form="createTicketForm" className="btn" style={{ backgroundColor: '#fff', color: '#000' }} disabled={isSubmitting}>
+                    <button type="submit" form="createTicketForm" className="btn" style={{ backgroundColor: 'var(--bs-body-color)', color: 'var(--bs-body-bg)' }} disabled={isSubmitting}>
                         {isSubmitting ? 'Creating...' : 'Create Ticket'}
                     </button>
                 </div>
