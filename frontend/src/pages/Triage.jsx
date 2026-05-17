@@ -59,8 +59,7 @@ export default function Triage() {
     };
 
     return (
-        <div className="d-flex h-100 w-100 overflow-hidden bg-body-bg text-body-color" data-bs-theme="dark">
-
+        <div className="d-flex h-100 w-100 overflow-hidden" style={{ background: 'var(--bs-body-bg)', color: 'var(--bs-body-color)' }}>
             {/* PANE 1: THE TRIAGE FEED */}
             <div
                 className="d-flex flex-column border-end h-100"
@@ -70,7 +69,7 @@ export default function Triage() {
                 <div className="p-3 border-bottom d-flex align-items-center gap-2" style={{ borderColor: 'var(--auth-border-color)' }}>
                     <AlertCircle size={16} className="text-warning" />
                     <h6 className="mb-0 fw-semibold">Needs Triage</h6>
-                    <span className="badge rounded-pill ms-auto" style={{ backgroundColor: '#27272A', color: '#a1a1aa' }}>
+                    <span className="badge rounded-pill ms-auto" style={{ backgroundColor: 'var(--auth-btn-bg)', color: 'var(--bs-secondary-color)' }}>
                         {triageTickets.length}
                     </span>
                 </div>
@@ -108,7 +107,7 @@ export default function Triage() {
                         onTicketUpdated={handleTicketUpdated}
                     />
                 ) : (
-                    <div className="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted" style={{ backgroundColor: '#000000' }}>
+                    <div className="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
                         <AlertCircle size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
                         <p>Select a ticket from the queue to review and assign.</p>
                     </div>

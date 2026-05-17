@@ -49,6 +49,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem('fixit_token');
         localStorage.removeItem('fixit_user');
+        setUser(null);
     };
 
     // The context payload that will be available to all children

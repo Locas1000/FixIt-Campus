@@ -415,14 +415,16 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
         <div className="d-flex flex-grow-1 w-100 h-100 overflow-hidden" style={{ background: 'var(--bs-body-bg)' }}>
 
             {/* ── MAIN CONTENT AREA ── */}
-            <div className="flex-grow-1 overflow-y-auto custom-scrollbar p-4" style={{ minWidth: 0 }}>
+           <div className="flex-grow-1 overflow-y-auto custom-scrollbar p-4 p-lg-5 d-flex justify-content-center" style={{ minWidth: 0 }}>
 
-                <button
-                    className="btn btn-outline-secondary btn-sm mb-3 d-md-none"
-                    onClick={onBackToFeed}
-                >
-                    ← Back to Feed
-                </button>
+                <div style={{ maxWidth: '800px', width: '100%' }}>
+
+                    <button
+                        className="btn btn-outline-secondary btn-sm mb-3 d-md-none"
+                        onClick={onBackToFeed}
+                    >
+                        ← Back to Feed
+                    </button>
 
                 <div style={{ fontSize: '0.75rem', color: 'var(--bs-secondary-color)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>Issues</span>
@@ -571,12 +573,14 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
                     <CommentBox onSubmit={handleCommentSubmit} isSubmitting={commentSubmitting} />
                 </div>
             </div>
-
+            </div> {/* This is the closing tag for the flex-grow-1 main scrolling area */}
             {/* ── RIGHT PROPERTIES PANEL ── */}
-            <div
-                className="d-none d-lg-flex flex-column border-start p-3 custom-scrollbar overflow-y-auto"
+           <div
+                // Changed from 'p-3' to 'py-4 ps-4 pe-5' (Padding Y: 4, Padding Start: 4, Padding End/Right: 5)
+                className="d-none d-lg-flex flex-column border-start py-4 ps-4 pe-5 custom-scrollbar overflow-y-auto"
                 style={{
-                    width: '220px', flexShrink: 0,
+                    width: '280px', // Increased from 220px to absorb the new padding safely
+                    flexShrink: 0,
                     borderColor: 'var(--auth-border-color)', gap: '2px',
                 }}
             >
