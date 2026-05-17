@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import { ChevronRight, ChevronLeft } from 'lucide-react'; // <-- NEW IMPORT
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -26,9 +28,6 @@ const PRIORITY_META = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-/**
- * A generic dropdown wrapper that closes on outside click.
- */
 function Dropdown({ trigger, children, open, onToggle, disabled }) {
     const ref = useRef(null);
 
@@ -83,9 +82,6 @@ function DropdownItem({ onClick, children, active }) {
     );
 }
 
-/**
- * A single property row in the right panel.
- */
 function PropertyRow({ label, children }) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', minHeight: '32px', gap: '8px' }}>
@@ -97,13 +93,12 @@ function PropertyRow({ label, children }) {
     );
 }
 
-/**
- * Renders a single activity entry — either a status-change audit item
- * or a free-text comment.
- */
-
 function ActivityItem({ item }) {
-    const isComment = item.type === 'comment' || (!item.previousStatus && !item.newStatus && item.comment);
+    const isSystemMessage =
+        item.comment === "Status updated via Detail Panel" ||
+        (item.comment && String(item.comment).startsWith("Assigned to"));
+
+    const isComment = item.type === 'comment' || (item.comment && !isSystemMessage);
 
     const formatTime = (ts) => {
         if (!ts) return '';
@@ -112,103 +107,78 @@ function ActivityItem({ item }) {
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
-    // Pull initial from username if available, otherwise use fallback character
     const displayName = item.changedByUserName || `User #${item.changedByUserId}`;
     const userInitial = String(displayName).charAt(0).toUpperCase();
-
-    if (isComment) {
-        return (
-            <div style={{ display: 'flex', gap: '10px', padding: '10px 0' }}>
-                <div style={{
-                    width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
-                    background: '#3b1d6e', border: '1.5px solid #6d28d9',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.65rem', fontWeight: '600', color: '#c4b5fd',
-                }}>
-                    {userInitial}
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--bs-body-color)' }}>
-                            {displayName}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)' }}>
-                            {formatTime(item.changedAt)}
-                        </span>
-                    </div>
-                    <div style={{
-                        background: 'var(--auth-input-bg)',
-                        border: '1px solid var(--auth-border-color)',
-                        borderRadius: '6px',
-                        padding: '8px 12px',
-                        fontSize: '0.83rem',
-                        color: 'var(--bs-secondary-color)',
-                        lineHeight: '1.55',
-                    }}>
-                        {item.comment || item.content}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     const prevMeta = item.previousStatus ? STATUS_META[item.previousStatus] : null;
     const nextMeta = item.newStatus ? STATUS_META[item.newStatus] : null;
 
     return (
-        <div style={{ display: 'flex', gap: '10px', padding: '5px 0', alignItems: 'flex-start' }}>
-            <div style={{ width: '26px', flexShrink: 0, display: 'flex', justifyContent: 'center', paddingTop: '2px' }}>
-                <div style={{
-                    width: '18px', height: '18px', borderRadius: '50%',
-                    background: '#1e1e2e', border: '1.5px solid var(--auth-border-color)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.55rem', fontWeight: '600', color: 'var(--bs-secondary-color)',
-                }}>
-                    {userInitial}
-                </div>
+        <div style={{ display: 'flex', gap: '10px', padding: '10px 0' }}>
+            <div style={{
+                width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+                background: '#3b1d6e', border: '1.5px solid #6d28d9',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.65rem', fontWeight: '600', color: '#c4b5fd',
+            }}>
+                {userInitial}
             </div>
-            <div style={{ flex: 1, fontSize: '0.78rem', color: 'var(--bs-secondary-color)', lineHeight: '1.5' }}>
-                <span style={{ fontWeight: '500', color: 'var(--bs-body-color)' }}>{displayName}</span>
-                {' '}changed status
-                {prevMeta && (
-                    <>
-                        {' '}from{' '}
-                        <span style={{
-                            color: prevMeta.color, background: `${prevMeta.color}18`,
-                            padding: '1px 5px', borderRadius: '3px', fontSize: '0.75rem',
-                        }}>
-                            {prevMeta.icon} {item.previousStatus}
-                        </span>
-                    </>
-                )}
-                {nextMeta && (
-                    <>
-                        {' '}to{' '}
-                        <span style={{
-                            color: nextMeta.color, background: `${nextMeta.color}18`,
-                            padding: '1px 5px', borderRadius: '3px', fontSize: '0.75rem',
-                        }}>
-                            {nextMeta.icon} {item.newStatus}
-                        </span>
-                    </>
-                )}
-                {item.comment && (
-                    <span style={{ color: 'var(--bs-secondary-color)', marginLeft: '6px', fontStyle: 'italic' }}>
-                        — "{item.comment}"
+
+            <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--bs-body-color)' }}>
+                        {displayName}
                     </span>
-                )}
-                <span style={{ color: '#3a3a48', marginLeft: '8px', fontSize: '0.72rem' }}>
-                    {formatTime(item.changedAt)}
-                </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)' }}>
+                        {formatTime(item.changedAt)}
+                    </span>
+                </div>
+
+                <div style={{
+                    fontSize: '0.83rem',
+                    color: 'var(--bs-secondary-color)',
+                    lineHeight: '1.55',
+                    wordBreak: 'break-word'
+                }}>
+                    {isComment ? (
+                        <>{item.comment || item.content}</>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            changed status
+                            {prevMeta && (
+                                <>
+                                    {' '}from{' '}
+                                    <span style={{
+                                        color: prevMeta.color, background: `${prevMeta.color}18`,
+                                        padding: '1px 5px', borderRadius: '3px', fontSize: '0.75rem',
+                                    }}>
+                                        {prevMeta.icon} {item.previousStatus}
+                                    </span>
+                                </>
+                            )}
+                            {nextMeta && (
+                                <>
+                                    {' '}to{' '}
+                                    <span style={{
+                                        color: nextMeta.color, background: `${nextMeta.color}18`,
+                                        padding: '1px 5px', borderRadius: '3px', fontSize: '0.75rem',
+                                    }}>
+                                        {nextMeta.icon} {item.newStatus}
+                                    </span>
+                                </>
+                            )}
+                            {!isSystemMessage && item.comment && (
+                                <span style={{ color: 'var(--bs-secondary-color)', marginLeft: '6px', fontStyle: 'italic' }}>
+                                    — "{item.comment}"
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
 }
 
-
-/**
- * The comment input box at the bottom of the activity feed.
- */
 function CommentBox({ onSubmit, isSubmitting }) {
     const [value, setValue] = useState('');
     const [focused, setFocused] = useState(false);
@@ -274,7 +244,6 @@ function CommentBox({ onSubmit, isSubmitting }) {
 export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed, onTicketUpdated, isTriageMode = false }) {
     const { user } = useAuth();
 
-    // Local ticket state for optimistic updates
     const [ticket, setTicket] = useState(initialTicket);
     const [history, setHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -283,18 +252,15 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
     const [openDropdown, setOpenDropdown] = useState(null);
     const [statusUpdating, setStatusUpdating] = useState(false);
     const [commentSubmitting, setCommentSubmitting] = useState(false);
-
-    // Assignee State
+    const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
     const [technicians, setTechnicians] = useState([]);
     const [assigneeUpdating, setAssigneeUpdating] = useState(false);
 
-    // Sync when a different ticket is selected
     useEffect(() => {
         setTicket(initialTicket);
         setOpenDropdown(null);
     }, [initialTicket?.id]);
 
-    // Fetch Technicians for the assignment dropdown
     useEffect(() => {
         const fetchTechnicians = async () => {
             try {
@@ -309,7 +275,6 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
         fetchTechnicians();
     }, []);
 
-    // Fetch audit history whenever the ticket changes
     useEffect(() => {
         if (!ticket?.id) return;
         const fetchHistory = async () => {
@@ -329,7 +294,6 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
 
     const toggleDropdown = (name) => (val) => setOpenDropdown(val ? name : null);
 
-    // ── Status Update ──
     const handleStatusChange = async (newStatus) => {
         setOpenDropdown(null);
         const previousStatus = ticket.status;
@@ -356,7 +320,6 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
         }
     };
 
-    // ── Assignee Update ──
     const handleAssigneeChange = async (assigneeId) => {
         setOpenDropdown(null);
         const previousAssignee = ticket.assignedTechnicianId;
@@ -382,7 +345,6 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
         }
     };
 
-    // ── Comment Submit ──
     const handleCommentSubmit = async (comment) => {
         setCommentSubmitting(true);
         try {
@@ -410,330 +372,374 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
     const formattedDate = (ts) => ts
         ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '—';
-    // ── Render ──
+
+    const creatorName = ticket.creatorId === user?.id ? user?.name : `User #${ticket.creatorId}`;
+    const creatorInitial = creatorName ? creatorName.charAt(0).toUpperCase() : '?';
+
     return (
-        <div className="d-flex flex-grow-1 w-100 h-100 overflow-hidden" style={{ background: 'var(--bs-body-bg)' }}>
+        <div className="d-flex flex-grow-1 w-100 h-100 position-relative overflow-hidden" style={{ background: 'var(--bs-body-bg)' }}>
 
             {/* ── MAIN CONTENT AREA ── */}
-           <div className="flex-grow-1 overflow-y-auto custom-scrollbar p-4 p-lg-5 d-flex justify-content-center" style={{ minWidth: 0 }}>
+            <div className="flex-grow-1 overflow-y-auto custom-scrollbar p-4 p-lg-5 d-flex" style={{ minWidth: 0 }}>
+                <div style={{ width: '100%' }}>
 
-                <div style={{ maxWidth: '800px', width: '100%' }}>
+                    {/* NEW GHOST "BACK" BUTTON */}
+                    <div className="mb-4">
+                        <button
+                            className="btn d-inline-flex align-items-center gap-2 p-0"
+                            onClick={onBackToFeed}
+                            style={{
+                                fontSize: '0.85rem',
+                                fontWeight: '500',
+                                color: 'var(--bs-secondary-color)',
+                                border: 'none',
+                                background: 'transparent',
+                                transition: 'color 0.15s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--bs-body-color)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--bs-secondary-color)'}
+                        >
+                            <ChevronLeft size={16} strokeWidth={2.5} />
+                            Back to issues
+                        </button>
+                    </div>
 
-                    <button
-                        className="btn btn-outline-secondary btn-sm mb-3 d-md-none"
-                        onClick={onBackToFeed}
-                    >
-                        ← Back to Feed
-                    </button>
-
-                <div style={{ fontSize: '0.75rem', color: 'var(--bs-secondary-color)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>Issues</span>
-                    <span style={{ opacity: 0.4 }}>›</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--bs-secondary-color)' }}>
-                        TKT-{String(ticket.id).substring(0, 4)}
-                    </span>
-                </div>
-
-                {/* FIX 2: Added wordBreak: 'break-word' to prevent massive unbroken strings from blowing out the layout */}
-                <h4 className="fw-bold mb-3" style={{ color: 'var(--bs-body-color)', lineHeight: '1.3', fontSize: '1.25rem', wordBreak: 'break-word' }}>
-                    {ticket.title}
-                </h4>
-
-                <div className="d-flex flex-wrap gap-2 mb-4">
-                    <Dropdown
-                        open={openDropdown === 'status'}
-                        onToggle={toggleDropdown('status')}
-                        disabled={isTriageMode} // Lock if in Triage
-                        trigger={
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
-                                background: `${statusMeta.color}18`,
-                                border: `1px solid ${statusMeta.color}44`,
-                                color: statusMeta.color,
-                            }}>
-                                {statusUpdating
-                                    ? <span className="spinner-border spinner-border-sm" style={{ width: '10px', height: '10px' }} />
-                                    : statusMeta.icon
-                                }
-                                {ticket.status}
-                                {!isTriageMode && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
-                            </span>
-                        }
-                    >
-                        {VALID_STATUSES.map(s => {
-                            const m = STATUS_META[s];
-                            return (
-                                <DropdownItem key={s} active={s === ticket.status}
-                                    onClick={() => handleStatusChange(s)}>
-                                    <span style={{ color: m.color }}>{m.icon}</span>
-                                    {s}
-                                </DropdownItem>
-                            );
-                        })}
-                    </Dropdown>
-
-                    <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                        padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
-                        background: priorityMeta.bg,
-                        border: `1px solid ${priorityMeta.color}44`,
-                        color: priorityMeta.color,
-                    }}>
-                        {priorityMeta.icon} {ticket.priority}
-                    </span>
-
-                    {ticket.category && (
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center',
-                            padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
-                            background: 'var(--auth-border-color)',
-                            border: '1px solid var(--auth-border-color)',
-                            color: 'var(--bs-secondary-color)',
-                        }}>
-                            {ticket.category}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--bs-secondary-color)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>Issues</span>
+                        <span style={{ opacity: 0.4 }}>›</span>
+                        <span style={{ fontFamily: 'monospace', color: 'var(--bs-secondary-color)' }}>
+                            TKT-{String(ticket.id).substring(0, 4)}
                         </span>
-                    )}
-                </div>
-
-                {ticket.description && (
-                    <div style={{
-                        fontSize: '0.875rem', color: 'var(--bs-secondary-color)',
-                        lineHeight: '1.7', marginBottom: '28px', padding: '16px',
-                        background: 'var(--auth-input-bg)', border: '1px solid var(--auth-border-color)',
-                        borderRadius: '8px',
-                    }}>
-                        {ticket.description}
                     </div>
-                )}
 
-                {ticket.evidence && ticket.evidence.length > 0 && (
-                    <div style={{ marginBottom: '28px' }}>
-                        <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '10px', fontWeight: '600' }}>
-                            Evidence
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                            {ticket.evidence.map((ev, i) => (
-                                <div key={ev.id || i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--auth-border-color)' }}>
-                                    <img
-                                        src={ev.url}
-                                        alt={ev.comment || `Evidence ${i + 1}`}
-                                        style={{ width: '160px', height: '100px', objectFit: 'cover', display: 'block' }}
-                                        onError={e => { e.target.style.display = 'none'; }}
-                                    />
-                                    {ev.comment && (
-                                        <div style={{ padding: '4px 8px', fontSize: '0.72rem', color: 'var(--bs-secondary-color)', background: 'var(--auth-input-bg)' }}>
-                                            {ev.comment}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                    <h4 className="fw-bold mb-3" style={{ color: 'var(--bs-body-color)', lineHeight: '1.3', fontSize: '1.25rem', wordBreak: 'break-word' }}>
+                        {ticket.title}
+                    </h4>
 
-                <hr style={{ borderColor: 'var(--auth-border-color)', margin: '0 0 20px' }} />
-
-                <div>
-                    <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '8px', fontWeight: '600' }}>
-                        Activity
-                    </p>
-
-                    {historyLoading && (
-                        <div className="text-muted" style={{ fontSize: '0.8rem', padding: '12px 0' }}>Loading history...</div>
-                    )}
-                    {historyError && (
-                        <div style={{ fontSize: '0.8rem', color: '#ef4444', padding: '8px 0' }}>{historyError}</div>
-                    )}
-
-                    {!historyLoading && (
-                        <div style={{ display: 'flex', gap: '10px', padding: '5px 0' }}>
-                            <div style={{ width: '26px', flexShrink: 0, display: 'flex', justifyContent: 'center', paddingTop: '2px' }}>
-                                <div style={{
-                                    width: '18px', height: '18px', borderRadius: '50%',
-                                    background: '#1e1e2e', border: '1.5px solid var(--auth-border-color)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '0.55rem', color: 'var(--bs-secondary-color)',
+                    <div className="d-flex flex-wrap gap-2 mb-4">
+                        <Dropdown
+                            open={openDropdown === 'status'}
+                            onToggle={toggleDropdown('status')}
+                            disabled={isTriageMode || user?.role === 'User'} // <-- ADD THE ROLE CHECK HERE
+                            trigger={
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
+                                    background: `${statusMeta.color}18`,
+                                    border: `1px solid ${statusMeta.color}44`,
+                                    color: statusMeta.color,
                                 }}>
-                                    {String(ticket.creatorId ?? '?').charAt(0).toUpperCase()}
-                                </div>
-                            </div>
-                            <div style={{ flex: 1, fontSize: '0.78rem', color: 'var(--bs-secondary-color)', lineHeight: '1.5' }}>
-                                <span style={{ fontWeight: '500', color: 'var(--bs-body-color)' }}>User #{ticket.creatorId}</span>
-                                {' '}created this ticket
-                                <span style={{ color: '#3a3a48', marginLeft: '8px', fontSize: '0.72rem' }}>
-                                    {formattedDate(ticket.createdAt)}
+                                    {statusUpdating ? <span className="spinner-border spinner-border-sm" style={{ width: '10px', height: '10px' }} /> : statusMeta.icon}
+                                    {ticket.status}
+                                    {!isTriageMode && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
                                 </span>
+                            }
+                        >
+                            {VALID_STATUSES.map(s => {
+                                const m = STATUS_META[s];
+                                return (
+                                    <DropdownItem key={s} active={s === ticket.status} onClick={() => handleStatusChange(s)}>
+                                        <span style={{ color: m.color }}>{m.icon}</span> {s}
+                                    </DropdownItem>
+                                );
+                            })}
+                        </Dropdown>
+
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
+                            background: priorityMeta.bg, border: `1px solid ${priorityMeta.color}44`,
+                            color: priorityMeta.color,
+                        }}>
+                            {priorityMeta.icon} {ticket.priority}
+                        </span>
+
+                        {ticket.category && (
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center',
+                                padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem',
+                                background: 'var(--auth-border-color)', border: '1px solid var(--auth-border-color)',
+                                color: 'var(--bs-secondary-color)',
+                            }}>
+                                {ticket.category}
+                            </span>
+                        )}
+                    </div>
+
+                    {ticket.description && (
+                        <div
+                            className="markdown-container"
+                            style={{
+                                fontSize: '0.875rem',
+                                color: 'var(--bs-secondary-color)',
+                                lineHeight: '1.7',
+                                marginBottom: '28px',
+                                overflowWrap: 'break-word'
+                            }}
+                        >
+                            <ReactMarkdown>
+                                {ticket.description}
+                            </ReactMarkdown>
+                        </div>
+                    )}
+
+                    {ticket.evidence && ticket.evidence.length > 0 && (
+                        <div style={{ marginBottom: '28px' }}>
+                            <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '10px', fontWeight: '600' }}>
+                                Evidence
+                            </p>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                {ticket.evidence.map((ev, i) => (
+                                    <div key={ev.id || i} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--auth-border-color)' }}>
+                                        <img
+                                            src={ev.url} alt={ev.comment || `Evidence ${i + 1}`}
+                                            style={{ width: '160px', height: '100px', objectFit: 'cover', display: 'block' }}
+                                            onError={e => { e.target.style.display = 'none'; }}
+                                        />
+                                        {ev.comment && (
+                                            <div style={{ padding: '4px 8px', fontSize: '0.72rem', color: 'var(--bs-secondary-color)', background: 'var(--auth-input-bg)' }}>
+                                                {ev.comment}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
 
-                    {history.map(item => <ActivityItem key={item.id} item={item} />)}
+                    <hr style={{ borderColor: 'var(--auth-border-color)', margin: '0 0 20px' }} />
 
-                    <CommentBox onSubmit={handleCommentSubmit} isSubmitting={commentSubmitting} />
+                    <div>
+                        <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '8px', fontWeight: '600' }}>
+                            Activity
+                        </p>
+
+                        {historyLoading && <div className="text-muted" style={{ fontSize: '0.8rem', padding: '12px 0' }}>Loading history...</div>}
+                        {historyError && <div style={{ fontSize: '0.8rem', color: '#ef4444', padding: '8px 0' }}>{historyError}</div>}
+
+                        {!historyLoading && (
+                            <div style={{ display: 'flex', gap: '10px', padding: '5px 0' }}>
+                                <div style={{ width: '26px', flexShrink: 0, display: 'flex', justifyContent: 'center', paddingTop: '2px' }}>
+                                    <div style={{
+                                        width: '18px', height: '18px', borderRadius: '50%',
+                                        background: '#1e1e2e', border: '1.5px solid var(--auth-border-color)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.55rem', color: 'var(--bs-secondary-color)',
+                                    }}>
+                                        {creatorInitial}
+                                    </div>
+                                </div>
+                                <div style={{ flex: 1, fontSize: '0.78rem', color: 'var(--bs-secondary-color)', lineHeight: '1.5' }}>
+                                    <span style={{ fontWeight: '500', color: 'var(--bs-body-color)' }}>{creatorName}</span> created this ticket
+                                    <span style={{ color: '#3a3a48', marginLeft: '8px', fontSize: '0.72rem' }}>
+                                        {formattedDate(ticket.createdAt)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {history.map(item => <ActivityItem key={item.id} item={item} />)}
+
+                        <CommentBox onSubmit={handleCommentSubmit} isSubmitting={commentSubmitting} />
+                    </div>
                 </div>
             </div>
-            </div> {/* This is the closing tag for the flex-grow-1 main scrolling area */}
-            {/* ── RIGHT PROPERTIES PANEL ── */}
-           <div
-                // Changed from 'p-3' to 'py-4 ps-4 pe-5' (Padding Y: 4, Padding Start: 4, Padding End/Right: 5)
-                className="d-none d-lg-flex flex-column border-start py-4 ps-4 pe-5 custom-scrollbar overflow-y-auto"
+
+           {/* ── RIGHT PROPERTIES PANEL WRAPPER ── */}
+            <div
+                className="d-none d-lg-block position-relative h-100"
                 style={{
-                    width: '280px', // Increased from 220px to absorb the new padding safely
+                    width: isPropertiesOpen ? '280px' : '0px',
                     flexShrink: 0,
-                    borderColor: 'var(--auth-border-color)', gap: '2px',
+                    transition: 'width 0.2s ease',
+                    zIndex: 10
                 }}
             >
-                <p style={{
-                    fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em',
-                    color: 'var(--bs-secondary-color)', fontWeight: '600', marginBottom: '12px',
-                }}>
-                    Properties
-                </p>
+                {/* ── THE FLOATING RIGHT PANEL TOGGLE ── */}
+                <button
+                    onClick={() => setIsPropertiesOpen(!isPropertiesOpen)}
+                    className="btn sidebar-toggle-btn d-none d-lg-flex align-items-center justify-content-center"
+                    style={{
+                        position: 'absolute',
+                        right: isPropertiesOpen ? '267px' : '16px', // 280px - 13px = 267px
+                        top: '24px',
+                        zIndex: 1050,
+                        transition: 'right 0.2s ease'
+                    }}
+                    title={isPropertiesOpen ? "Hide Properties" : "Show Properties"}
+                >
+                    {isPropertiesOpen ? <ChevronRight size={14} strokeWidth={2.5} /> : <ChevronLeft size={14} strokeWidth={2.5} />}
+                </button>
 
-                {/* Status Dropdown */}
-                <PropertyRow label="Status">
-                    <Dropdown
-                        open={openDropdown === 'status-panel'}
-                        onToggle={toggleDropdown('status-panel')}
-                        disabled={isTriageMode} // Lock if in Triage
-                        trigger={
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                                background: `${statusMeta.color}18`, border: `1px solid ${statusMeta.color}33`,
-                                color: statusMeta.color,
+                <div
+                    className="d-none d-lg-block h-100"
+                    style={{
+                        width: isPropertiesOpen ? '280px' : '0px',
+                        flexShrink: 0,
+                        transition: 'width 0.2s ease',
+                        zIndex: 10
+                    }}
+                >
+                    {/* Outer clip wrapper */}
+                    <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderLeft: '1px solid var(--auth-border-color)' }}>
+                        <div
+                            className="d-flex flex-column py-4 ps-4 pe-5 custom-scrollbar overflow-y-auto"
+                            style={{
+                                width: '280px',
+                                height: '100%',
+                                gap: '2px',
+                                backgroundColor: 'var(--bs-body-bg)'
+                            }}
+                        >
+                            {/* EVERYTHING GOES INSIDE THIS DIV NOW */}
+
+                            <p style={{
+                                fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em',
+                                color: 'var(--bs-secondary-color)', fontWeight: '600', marginBottom: '12px',
                             }}>
-                                {statusMeta.icon} {ticket.status}
-                                {!isTriageMode && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
-                            </span>
-                        }
-                    >
-                        {VALID_STATUSES.map(s => {
-                            const m = STATUS_META[s];
-                            return (
-                                <DropdownItem key={s} active={s === ticket.status}
-                                    onClick={() => { setOpenDropdown(null); handleStatusChange(s); }}>
-                                    <span style={{ color: m.color }}>{m.icon}</span>{s}
-                                </DropdownItem>
-                            );
-                        })}
-                    </Dropdown>
-                </PropertyRow>
+                                Properties
+                            </p>
 
-                {/* Priority Row */}
-                <PropertyRow label="Priority">
-                    <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                        padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                        background: priorityMeta.bg, border: `1px solid ${priorityMeta.color}33`,
-                        color: priorityMeta.color,
-                    }}>
-                        {priorityMeta.icon} {ticket.priority}
-                    </span>
-                </PropertyRow>
+                            <PropertyRow label="Status">
+                                <Dropdown
+                                    open={openDropdown === 'status-panel'}
+                                    onToggle={toggleDropdown('status-panel')}
+                                    disabled={isTriageMode || user?.role === 'User'} // <-- Fixed!
+                                    trigger={
+                                        <span style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                                            background: `${statusMeta.color}18`, border: `1px solid ${statusMeta.color}33`,
+                                            color: statusMeta.color,
+                                        }}>
+                                            {statusMeta.icon} {ticket.status}
+                                            {!isTriageMode && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
+                                        </span>
+                                    }
+                                >
+                                    {VALID_STATUSES.map(s => {
+                                        const m = STATUS_META[s];
+                                        return (
+                                            <DropdownItem key={s} active={s === ticket.status}
+                                                          onClick={() => { setOpenDropdown(null); handleStatusChange(s); }}>
+                                                <span style={{ color: m.color }}>{m.icon}</span>{s}
+                                            </DropdownItem>
+                                        );
+                                    })}
+                                </Dropdown>
+                            </PropertyRow>
 
-                {/* Assignee Dropdown */}
-                <PropertyRow label="Assignee">
-                    <Dropdown
-                        open={openDropdown === 'assignee-panel'}
-                        onToggle={toggleDropdown('assignee-panel')}
-                        disabled={user?.role !== 'Dispatcher'} // FIX 3: Lock dropdown for non-dispatchers
-                        trigger={
-                            <div style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                                background: 'transparent', border: '1px solid var(--auth-border-color)',
-                                color: 'var(--bs-body-color)',
-                                opacity: assigneeUpdating ? 0.6 : 1
-                            }}>
-                                {assigneeUpdating ? (
-                                    <span className="spinner-border spinner-border-sm text-secondary" style={{ width: '12px', height: '12px' }} />
-                                ) : ticket.assignedTechnicianId ? (
-                                    <div style={{
-                                        width: '16px', height: '16px', borderRadius: '50%',
-                                        background: '#3b1d6e', border: '1px solid #6d28d9',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
-                                    }}>
-                                        {String(ticket.assignedTechnicianId).charAt(0).toUpperCase()}
-                                    </div>
-                                ) : (
-                                    <span style={{ color: 'var(--bs-secondary-color)', fontSize: '0.8rem' }}>○</span>
-                                )}
-                                <span style={{ color: ticket.assignedTechnicianId ? 'inherit' : 'var(--bs-secondary-color)' }}>
-                                    {assignedTech ? assignedTech.name : 'Unassigned'}
-                                </span>
-                                {/* FIX 4: Only show the drop-down arrow if they actually have permissions */}
-                                {user?.role === 'Dispatcher' && (
-                                    <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>
-                                )}
-                            </div>
-                        }
-                    >
-                        <DropdownItem active={!ticket.assignedTechnicianId} onClick={() => handleAssigneeChange(null)}>
-                            <span style={{ color: 'var(--bs-secondary-color)' }}>○</span> Unassigned
-                        </DropdownItem>
-                        {technicians.map(tech => (
-                            <DropdownItem key={tech.id} active={tech.id === ticket.assignedTechnicianId}
-                                onClick={() => handleAssigneeChange(tech.id)}>
-                                <div style={{
-                                    width: '16px', height: '16px', borderRadius: '50%',
-                                    background: '#3b1d6e', border: '1px solid #6d28d9',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
+                            <PropertyRow label="Priority">
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                    padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                                    background: priorityMeta.bg, border: `1px solid ${priorityMeta.color}33`,
+                                    color: priorityMeta.color,
                                 }}>
-                                    {String(tech.name).charAt(0).toUpperCase()}
+                                    {priorityMeta.icon} {ticket.priority}
+                                </span>
+                            </PropertyRow>
+
+                            <PropertyRow label="Assignee">
+                                <Dropdown
+                                    open={openDropdown === 'assignee-panel'}
+                                    onToggle={toggleDropdown('assignee-panel')}
+                                    disabled={user?.role !== 'Dispatcher'}
+                                    trigger={
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                                            background: 'transparent', border: '1px solid var(--auth-border-color)',
+                                            color: 'var(--bs-body-color)', opacity: assigneeUpdating ? 0.6 : 1
+                                        }}>
+                                            {assigneeUpdating ? (
+                                                <span className="spinner-border spinner-border-sm text-secondary" style={{ width: '12px', height: '12px' }} />
+                                            ) : ticket.assignedTechnicianId ? (
+                                                <div style={{
+                                                    width: '16px', height: '16px', borderRadius: '50%',
+                                                    background: '#3b1d6e', border: '1px solid #6d28d9',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
+                                                }}>
+                                                    {String(ticket.assignedTechnicianId).charAt(0).toUpperCase()}
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: 'var(--bs-secondary-color)', fontSize: '0.8rem' }}>○</span>
+                                            )}
+                                            <span style={{ color: ticket.assignedTechnicianId ? 'inherit' : 'var(--bs-secondary-color)' }}>
+                                                {assignedTech ? assignedTech.name : 'Unassigned'}
+                                            </span>
+                                            {user?.role === 'Dispatcher' && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
+                                        </div>
+                                    }
+                                >
+                                    <DropdownItem active={!ticket.assignedTechnicianId} onClick={() => handleAssigneeChange(null)}>
+                                        <span style={{ color: 'var(--bs-secondary-color)' }}>○</span> Unassigned
+                                    </DropdownItem>
+                                    {technicians.map(tech => (
+                                        <DropdownItem key={tech.id} active={tech.id === ticket.assignedTechnicianId}
+                                                      onClick={() => handleAssigneeChange(tech.id)}>
+                                            <div style={{
+                                                width: '16px', height: '16px', borderRadius: '50%',
+                                                background: '#3b1d6e', border: '1px solid #6d28d9',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
+                                            }}>
+                                                {String(tech.name).charAt(0).toUpperCase()}
+                                            </div>
+                                            {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
+                                        </DropdownItem>
+                                    ))}
+                                </Dropdown>
+                            </PropertyRow>
+
+                            <PropertyRow label="Reporter">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{
+                                        width: '20px', height: '20px', borderRadius: '50%',
+                                        background: '#1e3a5f', border: '1.5px solid #2563eb',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.6rem', fontWeight: '600', color: '#93c5fd',
+                                    }}>
+                                        {creatorInitial}
+                                    </div>
+                                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-body-color)' }}>
+                                        {creatorName}
+                                    </span>
                                 </div>
-                                {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
-                            </DropdownItem>
-                        ))}
-                    </Dropdown>
-                </PropertyRow>
+                            </PropertyRow>
 
-                {/* Reporter */}
-                <PropertyRow label="Reporter">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <div style={{
-                            width: '20px', height: '20px', borderRadius: '50%',
-                            background: '#1e3a5f', border: '1.5px solid #2563eb',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.6rem', fontWeight: '600', color: '#93c5fd',
-                        }}>
-                            {String(ticket.creatorId ?? '?').charAt(0).toUpperCase()}
+                            {ticket.category && (
+                                <PropertyRow label="Category">
+                                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-secondary-color)' }}>
+                                        {ticket.category}
+                                    </span>
+                                </PropertyRow>
+                            )}
+
+                            {ticket.slaDeadline && (
+                                <PropertyRow label="SLA Due">
+                                    <span style={{
+                                        fontSize: '0.78rem',
+                                        color: new Date(ticket.slaDeadline) < new Date() ? '#ef4444' : 'var(--bs-secondary-color)',
+                                    }}>
+                                        {formattedDate(ticket.slaDeadline)}
+                                    </span>
+                                </PropertyRow>
+                            )}
+
+                            <hr style={{ borderColor: 'var(--auth-border-color)', margin: '12px 0 8px' }} />
+
+                            <div style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div>Created: {formattedDate(ticket.createdAt)}</div>
+                                <div>Updated: {formattedDate(ticket.updatedAt)}</div>
+                                <div style={{ marginTop: '4px', fontFamily: 'monospace', color: 'var(--bs-secondary-color)', opacity: 0.5 }}>
+                                    TKT-{String(ticket.id).substring(0, 4)}
+                                </div>
+                            </div>
+
+                        {/* THE WRAPPER DIV OFFICIALLY CLOSES HERE NOW */}
                         </div>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--bs-body-color)' }}>
-                            #{ticket.creatorId}
-                        </span>
-                    </div>
-                </PropertyRow>
-
-                {ticket.category && (
-                    <PropertyRow label="Category">
-                        <span style={{ fontSize: '0.78rem', color: 'var(--bs-secondary-color)' }}>
-                            {ticket.category}
-                        </span>
-                    </PropertyRow>
-                )}
-
-                {ticket.slaDeadline && (
-                    <PropertyRow label="SLA Due">
-                        <span style={{
-                            fontSize: '0.78rem',
-                            color: new Date(ticket.slaDeadline) < new Date() ? '#ef4444' : 'var(--bs-secondary-color)',
-                        }}>
-                            {formattedDate(ticket.slaDeadline)}
-                        </span>
-                    </PropertyRow>
-                )}
-
-                <hr style={{ borderColor: 'var(--auth-border-color)', margin: '12px 0 8px' }} />
-
-                <div style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div>Created: {formattedDate(ticket.createdAt)}</div>
-                    <div>Updated: {formattedDate(ticket.updatedAt)}</div>
-                    <div style={{ marginTop: '4px', fontFamily: 'monospace', color: 'var(--bs-secondary-color)', opacity: 0.5 }}>
-                        TKT-{String(ticket.id).substring(0, 4)}
                     </div>
                 </div>
             </div>

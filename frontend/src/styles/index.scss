@@ -116,4 +116,29 @@ $border-radius-pill: 50rem;
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--auth-border-color);
   border-radius: 10px;
+}/* ==========================================
+   4. CUSTOM UTILITIES & GLOBAL STYLES
+   ========================================== */
+
+// Linear-style floating sidebar toggle
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 20px;
+  z-index: 1050;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--auth-input-bg); // Slightly elevated from absolute black
+  border: 1px solid var(--auth-border-color);
+  color: var(--bs-secondary-color);
+  transition: all 0.2s ease;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+
+  &:hover, &:focus {
+    background-color: var(--auth-btn-hover);
+    color: var(--bs-body-color); // Text brightens on hover
+    border-color: var(--bs-body-color); // Sharp contrast border on hover, matching your form inputs
+    outline: none;
+  }
 }
