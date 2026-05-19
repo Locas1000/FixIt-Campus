@@ -4,7 +4,7 @@ import axios from 'axios';
 import { ticketService } from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
-import { ChevronRight, ChevronLeft } from 'lucide-react'; // <-- NEW IMPORT
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -252,7 +252,10 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
     const [openDropdown, setOpenDropdown] = useState(null);
     const [statusUpdating, setStatusUpdating] = useState(false);
     const [commentSubmitting, setCommentSubmitting] = useState(false);
-    const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
+
+    const [isPropertiesOpen, setIsPropertiesOpen] = useState(true); // Desktop right-panel state
+    const [isMobilePropertiesOpen, setIsMobilePropertiesOpen] = useState(false); // Mobile bottom-sheet state
+
     const [technicians, setTechnicians] = useState([]);
     const [assigneeUpdating, setAssigneeUpdating] = useState(false);
 
@@ -376,6 +379,155 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
     const creatorName = ticket.creatorId === user?.id ? user?.name : `User #${ticket.creatorId}`;
     const creatorInitial = creatorName ? creatorName.charAt(0).toUpperCase() : '?';
 
+    // ─── EXTRACTED PROPERTIES FOR REUSE IN DESKTOP AND MOBILE ───
+    const renderProperties = () => (
+        <>
+            <PropertyRow label="Status">
+                <Dropdown
+                    open={openDropdown === 'status-panel'}
+                    onToggle={toggleDropdown('status-panel')}
+                    // FIX: Remove 'isTriageMode' from the disabled check
+                    // Now it only disables if the current user is a 'User'
+                    disabled={user?.role === 'User'}
+                    trigger={
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                            background: `${statusMeta.color}18`, border: `1px solid ${statusMeta.color}33`,
+                            color: statusMeta.color,
+                        }}>
+                {statusMeta.icon} {ticket.status}
+                            {/* Only show the arrow if the user is allowed to edit
+                  (i.e., not a 'User')
+                */}
+                            {user?.role !== 'User' && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
+            </span>
+                    }
+                >
+                    {VALID_STATUSES.map(s => {
+                        const m = STATUS_META[s];
+                        return (
+                            <DropdownItem key={s} active={s === ticket.status}
+                                          onClick={() => { setOpenDropdown(null); handleStatusChange(s); }}>
+                                <span style={{ color: m.color }}>{m.icon}</span>{s}
+                            </DropdownItem>
+                        );
+                    })}
+                </Dropdown>
+            </PropertyRow>
+
+
+            <PropertyRow label="Priority">
+                <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                    background: priorityMeta.bg, border: `1px solid ${priorityMeta.color}33`,
+                    color: priorityMeta.color,
+                }}>
+                    {priorityMeta.icon} {ticket.priority}
+                </span>
+            </PropertyRow>
+
+            <PropertyRow label="Assignee">
+                <Dropdown
+                    open={openDropdown === 'assignee-panel'}
+                    onToggle={toggleDropdown('assignee-panel')}
+                    disabled={user?.role !== 'Dispatcher'}
+                    trigger={
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
+                            background: 'transparent', border: '1px solid var(--auth-border-color)',
+                            color: 'var(--bs-body-color)', opacity: assigneeUpdating ? 0.6 : 1
+                        }}>
+                            {assigneeUpdating ? (
+                                <span className="spinner-border spinner-border-sm text-secondary" style={{ width: '12px', height: '12px' }} />
+                            ) : ticket.assignedTechnicianId ? (
+                                <div style={{
+                                    width: '16px', height: '16px', borderRadius: '50%',
+                                    background: '#3b1d6e', border: '1px solid #6d28d9',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
+                                }}>
+                                    {String(ticket.assignedTechnicianId).charAt(0).toUpperCase()}
+                                </div>
+                            ) : (
+                                <span style={{ color: 'var(--bs-secondary-color)', fontSize: '0.8rem' }}>○</span>
+                            )}
+                            <span style={{ color: ticket.assignedTechnicianId ? 'inherit' : 'var(--bs-secondary-color)' }}>
+                                {assignedTech ? assignedTech.name : 'Unassigned'}
+                            </span>
+                            {user?.role === 'Dispatcher' && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
+                        </div>
+                    }
+                >
+                    <DropdownItem active={!ticket.assignedTechnicianId} onClick={() => handleAssigneeChange(null)}>
+                        <span style={{ color: 'var(--bs-secondary-color)' }}>○</span> Unassigned
+                    </DropdownItem>
+                    {technicians.map(tech => (
+                        <DropdownItem key={tech.id} active={tech.id === ticket.assignedTechnicianId}
+                                      onClick={() => handleAssigneeChange(tech.id)}>
+                            <div style={{
+                                width: '16px', height: '16px', borderRadius: '50%',
+                                background: '#3b1d6e', border: '1px solid #6d28d9',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
+                            }}>
+                                {String(tech.name).charAt(0).toUpperCase()}
+                            </div>
+                            {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
+                        </DropdownItem>
+                    ))}
+                </Dropdown>
+            </PropertyRow>
+
+            <PropertyRow label="Reporter">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                        width: '20px', height: '20px', borderRadius: '50%',
+                        background: '#1e3a5f', border: '1.5px solid #2563eb',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.6rem', fontWeight: '600', color: '#93c5fd',
+                    }}>
+                        {creatorInitial}
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-body-color)' }}>
+                        {creatorName}
+                    </span>
+                </div>
+            </PropertyRow>
+
+            {ticket.category && (
+                <PropertyRow label="Category">
+                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-secondary-color)' }}>
+                        {ticket.category}
+                    </span>
+                </PropertyRow>
+            )}
+
+            {ticket.slaDeadline && (
+                <PropertyRow label="SLA Due">
+                    <span style={{
+                        fontSize: '0.78rem',
+                        color: new Date(ticket.slaDeadline) < new Date() ? '#ef4444' : 'var(--bs-secondary-color)',
+                    }}>
+                        {formattedDate(ticket.slaDeadline)}
+                    </span>
+                </PropertyRow>
+            )}
+
+            <hr style={{ borderColor: 'var(--auth-border-color)', margin: '12px 0 8px' }} />
+
+            <div style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div>Created: {formattedDate(ticket.createdAt)}</div>
+                <div>Updated: {formattedDate(ticket.updatedAt)}</div>
+                <div style={{ marginTop: '4px', fontFamily: 'monospace', color: 'var(--bs-secondary-color)', opacity: 0.5 }}>
+                    TKT-{String(ticket.id).substring(0, 4)}
+                </div>
+            </div>
+        </>
+    );
+
     return (
         <div className="d-flex flex-grow-1 w-100 h-100 position-relative overflow-hidden" style={{ background: 'var(--bs-body-bg)' }}>
 
@@ -383,21 +535,15 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
             <div className="flex-grow-1 overflow-y-auto custom-scrollbar p-4 p-lg-5 d-flex" style={{ minWidth: 0 }}>
                 <div style={{ width: '100%' }}>
 
-                    {/* NEW GHOST "BACK" BUTTON */}
-                    <div className="mb-4">
+                    {/* GHOST "BACK" BUTTON - Mobile Only */}
+                    <div className="mb-4 d-md-none">
                         <button
                             className="btn d-inline-flex align-items-center gap-2 p-0"
                             onClick={onBackToFeed}
                             style={{
-                                fontSize: '0.85rem',
-                                fontWeight: '500',
-                                color: 'var(--bs-secondary-color)',
-                                border: 'none',
-                                background: 'transparent',
-                                transition: 'color 0.15s ease'
+                                fontSize: '0.85rem', fontWeight: '500', color: 'var(--bs-secondary-color)',
+                                border: 'none', background: 'transparent', transition: 'color 0.15s ease'
                             }}
-                            onMouseEnter={e => e.currentTarget.style.color = 'var(--bs-body-color)'}
-                            onMouseLeave={e => e.currentTarget.style.color = 'var(--bs-secondary-color)'}
                         >
                             <ChevronLeft size={16} strokeWidth={2.5} />
                             Back to issues
@@ -416,11 +562,25 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
                         {ticket.title}
                     </h4>
 
+                    {/* NEW: MOBILE PROPERTIES TOGGLE */}
+                    <button
+                        className="btn d-lg-none d-flex align-items-center justify-content-between mb-4 w-100"
+                        onClick={() => setIsMobilePropertiesOpen(true)}
+                        style={{
+                            background: 'transparent', color: 'var(--bs-secondary-color)',
+                            border: '1px solid var(--auth-border-color)', borderRadius: '6px',
+                            fontSize: '0.85rem', fontWeight: '500', padding: '8px 12px'
+                        }}
+                    >
+                        <span>View Properties</span>
+                        <ChevronRight size={16} strokeWidth={2.5} />
+                    </button>
+
                     <div className="d-flex flex-wrap gap-2 mb-4">
                         <Dropdown
                             open={openDropdown === 'status'}
                             onToggle={toggleDropdown('status')}
-                            disabled={isTriageMode || user?.role === 'User'} // <-- ADD THE ROLE CHECK HERE
+                            disabled={isTriageMode || user?.role === 'User'}
                             trigger={
                                 <span style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -466,6 +626,7 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
                         )}
                     </div>
 
+                    {/* RESTORED DESCRIPTION BLOCK */}
                     {ticket.description && (
                         <div
                             className="markdown-container"
@@ -483,6 +644,7 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
                         </div>
                     )}
 
+                    {/* RESTORED EVIDENCE BLOCK */}
                     {ticket.evidence && ticket.evidence.length > 0 && (
                         <div style={{ marginBottom: '28px' }}>
                             <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '10px', fontWeight: '600' }}>
@@ -509,6 +671,7 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
 
                     <hr style={{ borderColor: 'var(--auth-border-color)', margin: '0 0 20px' }} />
 
+                    {/* RESTORED ACTIVITY FEED BLOCK */}
                     <div>
                         <p style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bs-secondary-color)', marginBottom: '8px', fontWeight: '600' }}>
                             Activity
@@ -542,207 +705,77 @@ export default function TicketDetailPanel({ ticket: initialTicket, onBackToFeed,
 
                         <CommentBox onSubmit={handleCommentSubmit} isSubmitting={commentSubmitting} />
                     </div>
+
                 </div>
             </div>
 
-           {/* ── RIGHT PROPERTIES PANEL WRAPPER ── */}
+            {/* ── DESKTOP RIGHT PROPERTIES PANEL WRAPPER ── */}
             <div
                 className="d-none d-lg-block position-relative h-100"
                 style={{
                     width: isPropertiesOpen ? '280px' : '0px',
-                    flexShrink: 0,
-                    transition: 'width 0.2s ease',
-                    zIndex: 10
+                    flexShrink: 0, transition: 'width 0.2s ease', zIndex: 10
                 }}
             >
-                {/* ── THE FLOATING RIGHT PANEL TOGGLE ── */}
                 <button
                     onClick={() => setIsPropertiesOpen(!isPropertiesOpen)}
                     className="btn sidebar-toggle-btn d-none d-lg-flex align-items-center justify-content-center"
                     style={{
-                        position: 'absolute',
-                        right: isPropertiesOpen ? '267px' : '16px', // 280px - 13px = 267px
-                        top: '24px',
-                        zIndex: 1050,
-                        transition: 'right 0.2s ease'
+                        position: 'absolute', right: isPropertiesOpen ? '267px' : '16px',
+                        top: '24px', zIndex: 1050, transition: 'right 0.2s ease'
                     }}
-                    title={isPropertiesOpen ? "Hide Properties" : "Show Properties"}
                 >
                     {isPropertiesOpen ? <ChevronRight size={14} strokeWidth={2.5} /> : <ChevronLeft size={14} strokeWidth={2.5} />}
                 </button>
 
-                <div
-                    className="d-none d-lg-block h-100"
-                    style={{
-                        width: isPropertiesOpen ? '280px' : '0px',
-                        flexShrink: 0,
-                        transition: 'width 0.2s ease',
-                        zIndex: 10
-                    }}
-                >
-                    {/* Outer clip wrapper */}
+                <div className="d-none d-lg-block h-100" style={{ width: isPropertiesOpen ? '280px' : '0px', flexShrink: 0, transition: 'width 0.2s ease', zIndex: 10 }}>
                     <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderLeft: '1px solid var(--auth-border-color)' }}>
-                        <div
-                            className="d-flex flex-column py-4 ps-4 pe-5 custom-scrollbar overflow-y-auto"
-                            style={{
-                                width: '280px',
-                                height: '100%',
-                                gap: '2px',
-                                backgroundColor: 'var(--bs-body-bg)'
-                            }}
-                        >
-                            {/* EVERYTHING GOES INSIDE THIS DIV NOW */}
-
-                            <p style={{
-                                fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em',
-                                color: 'var(--bs-secondary-color)', fontWeight: '600', marginBottom: '12px',
-                            }}>
+                        <div className="d-flex flex-column py-4 ps-4 pe-5 custom-scrollbar overflow-y-auto" style={{ width: '280px', height: '100%', gap: '2px', backgroundColor: 'var(--bs-body-bg)' }}>
+                            <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bs-secondary-color)', fontWeight: '600', marginBottom: '12px' }}>
                                 Properties
                             </p>
-
-                            <PropertyRow label="Status">
-                                <Dropdown
-                                    open={openDropdown === 'status-panel'}
-                                    onToggle={toggleDropdown('status-panel')}
-                                    disabled={isTriageMode || user?.role === 'User'} // <-- Fixed!
-                                    trigger={
-                                        <span style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                                            background: `${statusMeta.color}18`, border: `1px solid ${statusMeta.color}33`,
-                                            color: statusMeta.color,
-                                        }}>
-                                            {statusMeta.icon} {ticket.status}
-                                            {!isTriageMode && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
-                                        </span>
-                                    }
-                                >
-                                    {VALID_STATUSES.map(s => {
-                                        const m = STATUS_META[s];
-                                        return (
-                                            <DropdownItem key={s} active={s === ticket.status}
-                                                          onClick={() => { setOpenDropdown(null); handleStatusChange(s); }}>
-                                                <span style={{ color: m.color }}>{m.icon}</span>{s}
-                                            </DropdownItem>
-                                        );
-                                    })}
-                                </Dropdown>
-                            </PropertyRow>
-
-                            <PropertyRow label="Priority">
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                    padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                                    background: priorityMeta.bg, border: `1px solid ${priorityMeta.color}33`,
-                                    color: priorityMeta.color,
-                                }}>
-                                    {priorityMeta.icon} {ticket.priority}
-                                </span>
-                            </PropertyRow>
-
-                            <PropertyRow label="Assignee">
-                                <Dropdown
-                                    open={openDropdown === 'assignee-panel'}
-                                    onToggle={toggleDropdown('assignee-panel')}
-                                    disabled={user?.role !== 'Dispatcher'}
-                                    trigger={
-                                        <div style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                            padding: '2px 8px', borderRadius: '5px', fontSize: '0.78rem',
-                                            background: 'transparent', border: '1px solid var(--auth-border-color)',
-                                            color: 'var(--bs-body-color)', opacity: assigneeUpdating ? 0.6 : 1
-                                        }}>
-                                            {assigneeUpdating ? (
-                                                <span className="spinner-border spinner-border-sm text-secondary" style={{ width: '12px', height: '12px' }} />
-                                            ) : ticket.assignedTechnicianId ? (
-                                                <div style={{
-                                                    width: '16px', height: '16px', borderRadius: '50%',
-                                                    background: '#3b1d6e', border: '1px solid #6d28d9',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
-                                                }}>
-                                                    {String(ticket.assignedTechnicianId).charAt(0).toUpperCase()}
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: 'var(--bs-secondary-color)', fontSize: '0.8rem' }}>○</span>
-                                            )}
-                                            <span style={{ color: ticket.assignedTechnicianId ? 'inherit' : 'var(--bs-secondary-color)' }}>
-                                                {assignedTech ? assignedTech.name : 'Unassigned'}
-                                            </span>
-                                            {user?.role === 'Dispatcher' && <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>▾</span>}
-                                        </div>
-                                    }
-                                >
-                                    <DropdownItem active={!ticket.assignedTechnicianId} onClick={() => handleAssigneeChange(null)}>
-                                        <span style={{ color: 'var(--bs-secondary-color)' }}>○</span> Unassigned
-                                    </DropdownItem>
-                                    {technicians.map(tech => (
-                                        <DropdownItem key={tech.id} active={tech.id === ticket.assignedTechnicianId}
-                                                      onClick={() => handleAssigneeChange(tech.id)}>
-                                            <div style={{
-                                                width: '16px', height: '16px', borderRadius: '50%',
-                                                background: '#3b1d6e', border: '1px solid #6d28d9',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.5rem', fontWeight: '600', color: '#c4b5fd',
-                                            }}>
-                                                {String(tech.name).charAt(0).toUpperCase()}
-                                            </div>
-                                            {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
-                                        </DropdownItem>
-                                    ))}
-                                </Dropdown>
-                            </PropertyRow>
-
-                            <PropertyRow label="Reporter">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{
-                                        width: '20px', height: '20px', borderRadius: '50%',
-                                        background: '#1e3a5f', border: '1.5px solid #2563eb',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.6rem', fontWeight: '600', color: '#93c5fd',
-                                    }}>
-                                        {creatorInitial}
-                                    </div>
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-body-color)' }}>
-                                        {creatorName}
-                                    </span>
-                                </div>
-                            </PropertyRow>
-
-                            {ticket.category && (
-                                <PropertyRow label="Category">
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--bs-secondary-color)' }}>
-                                        {ticket.category}
-                                    </span>
-                                </PropertyRow>
-                            )}
-
-                            {ticket.slaDeadline && (
-                                <PropertyRow label="SLA Due">
-                                    <span style={{
-                                        fontSize: '0.78rem',
-                                        color: new Date(ticket.slaDeadline) < new Date() ? '#ef4444' : 'var(--bs-secondary-color)',
-                                    }}>
-                                        {formattedDate(ticket.slaDeadline)}
-                                    </span>
-                                </PropertyRow>
-                            )}
-
-                            <hr style={{ borderColor: 'var(--auth-border-color)', margin: '12px 0 8px' }} />
-
-                            <div style={{ fontSize: '0.72rem', color: 'var(--bs-secondary-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div>Created: {formattedDate(ticket.createdAt)}</div>
-                                <div>Updated: {formattedDate(ticket.updatedAt)}</div>
-                                <div style={{ marginTop: '4px', fontFamily: 'monospace', color: 'var(--bs-secondary-color)', opacity: 0.5 }}>
-                                    TKT-{String(ticket.id).substring(0, 4)}
-                                </div>
-                            </div>
-
-                        {/* THE WRAPPER DIV OFFICIALLY CLOSES HERE NOW */}
+                            {renderProperties()}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* ── MOBILE PROPERTIES BOTTOM SHEET OVERLAY ── */}
+            {isMobilePropertiesOpen && (
+                <div
+                    className="d-lg-none position-fixed w-100 h-100"
+                    style={{ top: 0, left: 0, zIndex: 1040, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+                    onClick={() => setIsMobilePropertiesOpen(false)}
+                />
+            )}
+            <div
+                className="d-lg-none position-fixed w-100"
+                style={{
+                    bottom: 0, left: 0,
+                    height: isMobilePropertiesOpen ? 'auto' : '0', maxHeight: '85vh',
+                    overflowY: 'auto', zIndex: 1050, transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: 'var(--auth-btn-bg)', borderTopLeftRadius: '16px', borderTopRightRadius: '16px',
+                    borderTop: isMobilePropertiesOpen ? '1px solid var(--auth-border-color)' : 'none',
+                    boxShadow: isMobilePropertiesOpen ? '0 -10px 40px rgba(0,0,0,0.5)' : 'none'
+                }}
+            >
+                {isMobilePropertiesOpen && (
+                    <div className="p-4 custom-scrollbar">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h6 className="mb-0 fw-bold" style={{ color: 'var(--bs-body-color)' }}>Properties</h6>
+                            <button
+                                onClick={() => setIsMobilePropertiesOpen(false)}
+                                className="btn p-0"
+                                style={{ color: 'var(--bs-secondary-color)', border: 'none', background: 'transparent' }}
+                            >
+                                <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>&times;</span>
+                            </button>
+                        </div>
+                        {renderProperties()}
+                    </div>
+                )}
+            </div>
+
         </div>
     );
 }

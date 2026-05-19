@@ -58,9 +58,9 @@ export default function MyTickets() {
     return (
         <div className="d-flex w-100 h-100 overflow-hidden" style={{ background: 'var(--bs-body-bg)' }}>
 
-            {/* ── PANE 1: TICKET LIST ── */}
+            {/* ── PANE 1: TICKET LIST (Hides on mobile when a ticket is selected) ── */}
             <div
-                className="d-flex flex-column border-end h-100"
+                className={`d-flex flex-column border-end h-100 ${selectedTicket ? 'd-none d-md-flex' : 'w-100'}`}
                 style={{ width: selectedTicket ? '380px' : '100%', flexShrink: 0, borderColor: 'var(--auth-border-color)', transition: 'width 0.2s ease' }}
             >
                 {/* Header & Tabs */}
