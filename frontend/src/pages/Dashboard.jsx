@@ -1,8 +1,8 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useOutlet, useLocation,useNavigate } from 'react-router-dom';
+import { useOutlet, useLocation, useNavigate } from 'react-router-dom';
 import { ticketService } from '../services/ticketService';
-import { userService } from '../services/userService'; // <-- 1. NEW: Import the user service
+import { userService } from '../services/userService';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layouts/Sidebar';
@@ -12,9 +12,9 @@ import TicketDetailPanel from '../components/domain/TicketDetailPanel';
 import CreateTicketModal from '../components/domain/CreateTicketModal';
 
 export default function Dashboard() {
-    const { user } = useAuth(); // <-- 1. Pull the user from context
+    const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
-    const [technicians, setTechnicians] = useState([]); // <-- 2. NEW: State for API technicians
+    const [technicians, setTechnicians] = useState([]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -28,36 +28,46 @@ export default function Dashboard() {
 
     const outlet = useOutlet();
     const location = useLocation();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    // Default sidebar to closed on mobile, open on desktop
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+
     const currentUserRole = user?.role || 'User';
     const showWorkspaceFeed = location.pathname === '/dashboard';
     const navigate = useNavigate();
 
-    // ── SECURITY REDIRECT ──
-    // If an unauthorized user manually navigates to /dashboard, bounce them to My Tickets
+    // Handle screen resizing for the sidebar
     useEffect(() => {
-        if (showWorkspaceFeed && !['Dispatcher'].includes(currentUserRole)) {
+        const handleResize = () => {
+            if (window.innerWidth >= 768) setIsSidebarOpen(true);
+            else setIsSidebarOpen(false);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // ── SECURITY LOGIC ──
+    const isAuthorizedForDashboard = ['Dispatcher', 'Admin'].includes(currentUserRole);
+
+    useEffect(() => {
+        if (showWorkspaceFeed && !isAuthorizedForDashboard) {
             navigate('/my-tickets', { replace: true });
         }
-    }, [showWorkspaceFeed, currentUserRole, navigate]);
+    }, [showWorkspaceFeed, isAuthorizedForDashboard, navigate]);
+
     useEffect(() => {
         const savedTheme = localStorage.getItem('fixit_theme') || 'dark';
         document.documentElement.setAttribute('data-bs-theme', savedTheme);
     }, []);
 
-    // 3. NEW: Fetch both tickets AND technicians
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                // Run both API calls at the same time!
-                // Note: Make sure 'Technician' matches exactly what your backend expects
                 const [ticketsData, techsData] = await Promise.all([
                     ticketService.getTickets(),
                     userService.getUsersByRole('Technician')
-
                 ]);
-// ADD THESE TWO LINES:
                 setTickets(ticketsData);
                 setTechnicians(techsData);
             } catch (err) {
@@ -71,18 +81,14 @@ export default function Dashboard() {
 
     const handleSelectTicket = useCallback((ticket) => {
         setSelectedTicket(prevTicket => {
-            // Check if the ticket we clicked is the same one that is already open
             if (prevTicket && prevTicket.id === ticket.id) {
-                // It's the same ticket! Close it and go back to feed.
                 setActiveMobileView('feed');
                 return null;
             }
-            // Otherwise, open the newly clicked ticket.
             setActiveMobileView('detail');
             return ticket;
         });
     }, []);
-
 
     const handleTicketUpdated = useCallback((updatedTicket) => {
         setTickets(prev =>
@@ -98,6 +104,8 @@ export default function Dashboard() {
 
     const handleTicketCreated = useCallback((newTicket) => {
         setTickets(prev => [newTicket, ...prev]);
+        // Optional: auto-close sidebar on mobile after creating ticket
+        if (window.innerWidth < 768) setIsSidebarOpen(false);
     }, []);
 
     const filteredTickets = useMemo(() => {
@@ -109,56 +117,77 @@ export default function Dashboard() {
         });
     }, [tickets, selectedAssigneeId, selectedLabel, selectedPriority]);
 
+    // Check if we are currently on a mobile viewport
+    const isMobile = window.innerWidth < 768;
+
     return (
         <div className="d-flex vh-100 w-100 overflow-hidden position-relative"
              style={{background: 'var(--bs-body-bg)', color: 'var(--bs-body-color)'}}>
 
-            {/* ── THE FLOATING TOGGLE BUTTON ── */}
+            {/* ── THE FLOATING TOGGLE BUTTON (Now visible on mobile!) ── */}
             <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="btn sidebar-toggle-btn d-none d-md-flex align-items-center justify-content-center"
+                className="btn sidebar-toggle-btn d-flex align-items-center justify-content-center"
                 style={{
+                    position: 'absolute',
                     left: isSidebarOpen ? '227px' : '16px',
+                    top: '24px',
+                    zIndex: 1060, // High z-index so it stays above the overlay
+                    transition: 'left 0.2s ease'
                 }}
                 title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
             >
-                {isSidebarOpen ? (
-                    <ChevronLeft size={14} strokeWidth={2.5}/>
-                ) : (
-                    <ChevronRight size={14} strokeWidth={2.5}/>
-                )}
+                {isSidebarOpen ? <ChevronLeft size={14} strokeWidth={2.5}/> : <ChevronRight size={14} strokeWidth={2.5}/>}
             </button>
+
+            {/* ── MOBILE SIDEBAR BACKDROP OVERLAY ── */}
+            {isSidebarOpen && isMobile && (
+                <div
+                    className="position-fixed w-100 h-100"
+                    style={{ top: 0, left: 0, zIndex: 1040, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
 
             {/* ── PANE 1: MAIN SIDEBAR ── */}
             <div
-                className={`border-end ${activeMobileView === 'sidebar' ? 'd-flex w-100' : 'd-none d-md-flex'}`}
+                className={`border-end h-100 ${isSidebarOpen ? 'd-flex' : 'd-none d-md-flex'}`}
                 style={{
-                    width: isSidebarOpen ? '240px' : '0px', // Animates to 0!
+                    position: isMobile ? 'absolute' : 'relative',
+                    left: 0,
+                    top: 0,
+                    zIndex: 1050,
+                    backgroundColor: 'var(--bs-body-bg)',
+                    width: isSidebarOpen ? '240px' : '0px',
                     flexShrink: 0,
                     borderColor: 'var(--auth-border-color)',
                     transition: 'width 0.2s ease',
                     overflow: 'hidden'
                 }}
             >
-                {/* Inner wrapper locks the sidebar at 240px so the text doesn't squish while it slides away */}
                 <div style={{width: '240px', minWidth: '240px', height: '100%'}}>
                     <Sidebar role={currentUserRole} onOpenCreateModal={() => setIsCreateModalOpen(true)}/>
                 </div>
             </div>
 
             {!showWorkspaceFeed ? (
-                /* ── OUTLET WRAPPER WITH PADDING FIX ── */
+                /* ── OUTLET WRAPPER ── */
                 <div
                     className={`flex-grow-1 overflow-auto ${activeMobileView === 'sidebar' ? 'd-none d-md-block' : 'd-block'}`}
                     style={{
                         backgroundColor: 'var(--bs-body-bg)',
-                        paddingLeft: isSidebarOpen ? '0px' : '48px', // Pushes content right when closed
+                        // Remove padding shift on mobile to prevent layout jumping
+                        paddingLeft: isMobile ? '0px' : (isSidebarOpen ? '0px' : '48px'),
                         transition: 'padding-left 0.2s ease'
                     }}
                 >
                     {outlet}
                 </div>
+            ) : !isAuthorizedForDashboard ? (
+                /* ── RENDER BLOCKER TO PREVENT UNAUTHORIZED FLASH ── */
+                <div className="flex-grow-1" style={{ backgroundColor: 'var(--bs-body-bg)' }} />
             ) : (
+                /* ── WORKSPACE DASHBOARD FEED ── */
                 <>
                     <div
                         className={`d-flex flex-column border-end ${activeMobileView === 'feed' ? 'd-flex w-100' : 'd-none d-md-flex'}`}
@@ -194,35 +223,27 @@ export default function Dashboard() {
                         }`}
                         style={{
                             minWidth: 0,
-                            // FIX: Animate to 0px instead of 48px!
                             width: selectedTicket ? undefined : (isAssigneePanelOpen ? '320px' : '0px'),
                             flexShrink: 0,
                             transition: 'width 0.2s ease',
-                            zIndex: 10 // Ensures button floats over the middle pane
+                            zIndex: 10
                         }}
                     >
-                        {/* ── THE RIGHT-SIDE FLOATING TOGGLE ── */}
                         {!selectedTicket && (
                             <button
                                 onClick={() => setIsAssigneePanelOpen(!isAssigneePanelOpen)}
                                 className="btn sidebar-toggle-btn d-none d-xl-flex align-items-center justify-content-center"
                                 style={{
                                     position: 'absolute',
-                                    left: '-13px', // Exactly half the 26px button to straddle the border!
+                                    left: '-13px',
                                     top: '24px'
                                 }}
                                 title={isAssigneePanelOpen ? "Hide Assignees" : "Show Assignees"}
                             >
-                                {isAssigneePanelOpen ? (
-                                    <ChevronRight size={14} strokeWidth={2.5} />
-                                ) : (
-                                    <ChevronLeft size={14} strokeWidth={2.5} />
-                                )}
+                                {isAssigneePanelOpen ? <ChevronRight size={14} strokeWidth={2.5} /> : <ChevronLeft size={14} strokeWidth={2.5} />}
                             </button>
                         )}
 
-                        {/* ── CLIPPING WRAPPER ── */}
-                        {/* This hides the inner content gracefully while the outer div animates to 0px */}
                         <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
                             {selectedTicket ? (
                                 <TicketDetailPanel ticket={selectedTicket} onBackToFeed={handleBackToFeed} onTicketUpdated={handleTicketUpdated} />
@@ -238,7 +259,6 @@ export default function Dashboard() {
                                         selectedPriority={selectedPriority}
                                         onSelectPriority={setSelectedPriority}
                                     />
-
                                 </div>
                             )}
                         </div>
